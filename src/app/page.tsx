@@ -1,644 +1,574 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import Image from "next/image";
+import React, { useState, useMemo, useEffect } from "react";
 import {
-  Wrench,
-  ShieldCheck,
-  Calendar,
-  Phone,
-  Clock,
-  MapPin,
-  CheckCircle2,
-  Gauge,
-  Cpu,
+  Sparkles,
   ExternalLink,
-  ArrowRight,
-  Key,
-  Check,
+  ShieldCheck,
+  Phone,
+  Calendar,
   Menu,
   X,
-  Activity,
+  Gauge,
+  ChevronRight,
+  Calculator,
+  Clock,
+  ArrowRight,
+  Car,
+  Wrench,
+  CheckCircle2,
+  Award,
+  Star,
+  FileCheck2,
+  Cpu,
+  Disc,
+  Cog,
+  Compass,
+  SearchCheck,
+  MapPin,
+  Mail,
+  KeyRound,
+  Train,
+  Coffee,
+  Wifi,
+  Key,
 } from "lucide-react";
 
-// Platform Categories
-type PlatformCategory = "euro" | "jap" | "perf";
+// Estimator Data
+type VehicleCategory = "euro" | "jap" | "suv";
 
-interface PlatformOption {
-  id: PlatformCategory;
-  name: string;
-  subLabel: string;
-  badge: string;
-}
-
-const PLATFORMS: PlatformOption[] = [
-  {
-    id: "euro",
-    name: "European Specialist",
-    subLabel: "BMW · VAG (Audi/VW) · Mercedes-Benz · Porsche",
-    badge: "ODIS / ISTA / XENTRY",
-  },
-  {
-    id: "jap",
-    name: "Japanese Precision",
-    subLabel: "Toyota GR · Lexus F · Subaru STI · Nissan GT-R",
-    badge: "Techstream / G-Scan",
-  },
-  {
-    id: "perf",
-    name: "AWD & Performance Commercial",
-    subLabel: "Audi Quattro · Ford Ranger Raptor · Hilux GR · AMG 4MATIC",
-    badge: "Heavy Duty & Dyno Spec",
-  },
-];
-
-interface ServiceScopeItem {
+interface ServiceScope {
   id: string;
   name: string;
-  scopeTag: string;
   duration: string;
-  turnaroundBadge: string;
-  euroCost: number;
-  euroDealerBenchmark: number;
-  japCost: number;
-  japDealerBenchmark: number;
-  perfCost: number;
-  perfDealerBenchmark: number;
-  summary: string;
-  technicalInclusions: string[];
-  imageUrl: string;
-  telemetryMetric: string;
+  euroPrice: [number, number];
+  japPrice: [number, number];
+  suvPrice: [number, number];
+  dealerMultiplier: number;
+  includes: string[];
 }
 
-const SERVICE_SCOPES: ServiceScopeItem[] = [
+const SERVICE_SCOPES: ServiceScope[] = [
   {
-    id: "minor-logbook",
-    name: "Manufacturer Logbook Servicing",
-    scopeTag: "Statutory Warranty Safe",
+    id: "logbook-minor",
+    name: "Logbook Servicing (Minor / Interim)",
     duration: "2.0 – 2.5 Hours",
-    turnaroundBadge: "Same-Day Handover (2.5h)",
-    euroCost: 425,
-    euroDealerBenchmark: 640,
-    japCost: 315,
-    japDealerBenchmark: 480,
-    perfCost: 385,
-    perfDealerBenchmark: 580,
-    summary:
-      "Strict manufacturer schedule execution adhering to OEM specifications. Genuine Mahle/Mann filtration with factory diagnostic oil service reset.",
-    technicalInclusions: [
-      "OEM synthetic engine lubricant meeting OEM manufacturer spec (Castrol Edge / Liqui Moly)",
-      "Genuine Mann / Mahle micro-particle oil filter replacement",
-      "62-point digital chassis, suspension, steering & brake safety telemetry audit",
-      "Factory diagnostic service interval reset via ODIS / ISTA / XENTRY port",
-      "Full statutory new car warranty preservation under Australian Consumer Law (ACL)",
-      "Digital logbook authentication record and physical service ledger stamped",
+    euroPrice: [380, 460],
+    japPrice: [280, 350],
+    suvPrice: [340, 420],
+    dealerMultiplier: 1.48,
+    includes: [
+      "Factory-spec OEM synthetic lubricant (Liqui Moly / Motul / Castrol)",
+      "Genuine Mann / Mahle oil filter replacement",
+      "62-point digital mechanical & electronic safety audit",
+      "Digital logbook verification & service interval reset",
+      "Statutory new car warranty 100% maintained",
     ],
-    imageUrl:
-      "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
-    telemetryMetric: "100% ACL Statutory Protection",
   },
   {
-    id: "major-comprehensive",
-    name: "Major Comprehensive Service & Overhaul",
-    scopeTag: "Deep Powertrain Maintenance",
+    id: "logbook-major",
+    name: "Comprehensive Logbook Service (Major)",
     duration: "4.0 – 5.0 Hours",
-    turnaroundBadge: "Full-Day Precision (4.5h)",
-    euroCost: 785,
-    euroDealerBenchmark: 1250,
-    japCost: 560,
-    japDealerBenchmark: 890,
-    perfCost: 670,
-    perfDealerBenchmark: 1080,
-    summary:
-      "Complete engine induction, spark ignition, fuel delivery, and fluid hygiene overhaul engineered for high-output thermal reliability.",
-    technicalInclusions: [
-      "OEM synthetic engine lubricant flush and renewal with high-flow filtration",
-      "High-efficiency engine intake air filter & activated charcoal cabin microfilter replacement",
-      "OEM iridium long-life spark plugs or high-pressure diesel fuel filter replacement",
-      "Hydraulic brake fluid hygroscopic boil analysis & DOT 4/5.1 pressure bleeder flush",
-      "Deep ECU diagnostic interrogation, sensor adaptation reset, and battery conductance scan",
-      "Comprehensive cooling system pressure test and auxiliary drive belt inspection",
+    euroPrice: [680, 850],
+    japPrice: [490, 620],
+    suvPrice: [580, 740],
+    dealerMultiplier: 1.55,
+    includes: [
+      "OEM synthetic engine oil + advanced engine flush",
+      "Engine intake & active cabin microfilter replacement",
+      "Spark plug renewal or diesel fuel filter replacement",
+      "Brake fluid moisture hygroscopic test & pressure flush",
+      "Chassis & suspension torque check with digital report",
     ],
-    imageUrl:
-      "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80",
-    telemetryMetric: "Dyno & Thermal Parity",
   },
   {
-    id: "performance-braking",
-    name: "Performance Brake Systems & Rotors",
-    scopeTag: "Braking Precision",
+    id: "brakes",
+    name: "Performance Brake Pad & Rotor Overhaul",
     duration: "2.0 – 3.0 Hours",
-    turnaroundBadge: "Precision Overhaul (2.5h)",
-    euroCost: 520,
-    euroDealerBenchmark: 860,
-    japCost: 400,
-    japDealerBenchmark: 640,
-    perfCost: 455,
-    perfDealerBenchmark: 730,
-    summary:
-      "Micrometer rotor runout verification, Brembo/Textar OEM friction compounds, caliper slider ultrasonic degrease, and high-temp pressure bleed.",
-    technicalInclusions: [
-      "Brembo, Textar, or Pagid low-dust compound performance brake pads",
-      "Digital micrometer rotor runout & parallel thickness variation check (<0.02mm tolerance)",
-      "Caliper guide pins degreased and lubricated with synthetic ceramic paste",
-      "Full closed-loop DOT 4 / 5.1 high-temperature brake fluid hydraulic flush",
-      "Controlled dynamic road bedding-in protocol to seat friction boundary layers",
-      "Electronic parking brake (EPB) service mode reset and calibration via scan tool",
+    euroPrice: [440, 590],
+    japPrice: [340, 460],
+    suvPrice: [390, 520],
+    dealerMultiplier: 1.42,
+    includes: [
+      "Brembo, Textar, or OEM friction compound pads",
+      "Digital micrometer rotor disc thickness & runout inspection",
+      "Caliper slider pin degreasing and high-temp synthetic lube",
+      "DOT 4 / 5.1 high-temperature fluid flush",
+      "Bedding-in road test and pedal calibration",
     ],
-    imageUrl:
-      "https://images.unsplash.com/photo-1625047509168-a7026f36de04?auto=format&fit=crop&w=800&q=80",
-    telemetryMetric: "Runout <0.02mm Spec",
   },
   {
-    id: "canbus-diagnostics",
-    name: "CAN-Bus Deep Diagnostic Telemetry",
-    scopeTag: "Telemetry & Electrical Trace",
-    duration: "1.0 – 1.5 Hours",
-    turnaroundBadge: "Rapid Diagnostic (1.5h)",
-    euroCost: 255,
-    euroDealerBenchmark: 420,
-    japCost: 210,
-    japDealerBenchmark: 340,
-    perfCost: 225,
-    perfDealerBenchmark: 370,
-    summary:
-      "PicoScope 4-channel digital oscilloscope telemetry, factory software interrogation (ODIS, ISTA, XENTRY), and intermittent circuit tracing.",
-    technicalInclusions: [
-      "PicoScope 4-channel digital oscilloscope live sensor wave capture and analysis",
-      "OEM factory diagnostic software session (ODIS, ISTA, XENTRY, Techstream)",
-      "Intermittent DTC freeze-frame data extraction and historical fault correlation",
-      "CAN-Bus high/low network communication resistance and ground-loop verification",
-      "Actuator bi-directional functional testing (wastegates, VVT solenoids, EVAP purge)",
-      "Itemized diagnostic report with identified root cause and transparent remedy pathway",
+    id: "diagnostics",
+    name: "Computer Diagnostics & ECU Fault Isolation",
+    duration: "1.5 – 2.0 Hours",
+    euroPrice: [220, 290],
+    japPrice: [190, 250],
+    suvPrice: [210, 270],
+    dealerMultiplier: 1.65,
+    includes: [
+      "Interrogation with factory scan suites (ISTA, ODIS, Star, Techstream)",
+      "PicoScope digital oscilloscope sensor waveform capture",
+      "Live sensor telemetry review under load conditions",
+      "Itemized diagnostic photo report & corrective action plan",
+      "Diagnostic fee credited against approved mechanical repairs",
     ],
-    imageUrl:
-      "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80",
-    telemetryMetric: "PicoScope 4-Ch Waveform",
   },
   {
-    id: "transmission-dsg",
-    name: "Transmission & DSG / ZF Fluid Renewal",
-    scopeTag: "Driveline & Mechatronics",
-    duration: "2.5 – 3.5 Hours",
-    turnaroundBadge: "Specialist Service (3h)",
-    euroCost: 620,
-    euroDealerBenchmark: 990,
-    japCost: 440,
-    japDealerBenchmark: 710,
-    perfCost: 535,
-    perfDealerBenchmark: 840,
-    summary:
-      "ZF Lifeguard 6/8/9 and OEM dual-clutch fluid flush, internal pan filter replacement, mechatronic adaptation relearn, and differential inspection.",
-    technicalInclusions: [
-      "Genuine ZF Lifeguard or OEM specification dual-clutch transmission synthetic fluid renewal",
-      "Internal transmission sump filter and integrated magnet pan gasket replacement",
-      "Factory scan-tool mechatronic valve body clutch engagement adaptation reset",
-      "Thermal level leveling calibrated within strict 35°C – 45°C live diagnostic window",
-      "Front and rear hypoid gear differential fluid condition analysis and top-up",
-      "Controlled driveline load test verifying seamless shift line pressure and torque handoff",
+    id: "driveline",
+    name: "Driveline & DSG / ZF Transmission Service",
+    duration: "3.5 – 4.5 Hours",
+    euroPrice: [580, 750],
+    japPrice: [450, 590],
+    suvPrice: [520, 680],
+    dealerMultiplier: 1.5,
+    includes: [
+      "Dedicated OEM transmission fluid (ZF Lifeguard / DSG)",
+      "Internal filter and mechatronic pan replacement",
+      "Transmission adaptation reset and clutch bite-point relearn",
+      "AWD differential & transfer case fluid inspection",
     ],
-    imageUrl:
-      "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
-    telemetryMetric: "ZF & DSG Clutch Adaptation",
   },
   {
-    id: "prepurchase-audit",
-    name: "120-Point Pre-Purchase Mechanical Audit",
-    scopeTag: "Due Diligence Dossier",
-    duration: "2.0 – 2.5 Hours",
-    turnaroundBadge: "Comprehensive Audit (2h)",
-    euroCost: 350,
-    euroDealerBenchmark: 560,
-    japCost: 290,
-    japDealerBenchmark: 450,
-    perfCost: 320,
-    perfDealerBenchmark: 510,
-    summary:
-      "Digital paint thickness depth gauge assessment, complete OBD historic freeze-frame telemetry report, borescope cylinder inspection, and road test.",
-    technicalInclusions: [
-      "Ultrasonic digital paint gauge coating measurement across 28 body points (accident repair check)",
-      "Full ECU diagnostic interrogation documenting historic over-revs and clearing patterns",
-      "Endoscopic borescope cylinder wall and timing chain elongation tensioner inspection",
-      "Chassis subframe, ball joint, damper seal, and steering rack kinematic check",
-      "High-speed dynamic road test analyzing NVH, driveline shunt, and boost linearity",
-      "Comprehensive multi-page digital PDF report featuring high-resolution photographic evidence",
+    id: "pre-purchase",
+    name: "Master Pre-Purchase Inspection (120-Point)",
+    duration: "2.5 Hours",
+    euroPrice: [320, 390],
+    japPrice: [260, 330],
+    suvPrice: [290, 360],
+    dealerMultiplier: 1.35,
+    includes: [
+      "120-point digital mechanical, structural & safety audit",
+      "Electronic paint depth gauge scan for hidden panel repair",
+      "OBD-II freeze-frame audit & verified mileage validation",
+      "Master Technician phone debrief with high-res photo gallery",
     ],
-    imageUrl:
-      "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80",
-    telemetryMetric: "28-Point Paint Depth Scan",
   },
 ];
 
-interface BookingSubmission {
-  referenceId: string;
-  name: string;
-  phone: string;
-  vehicle: string;
-  serviceId: string;
-  date: string;
-  courtesyCar: boolean;
-  notes: string;
-}
-
-export default function ApexMechanicalPage() {
-  // Navigation & UI States
+export default function Page() {
+  // Mobile Nav State
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Estimator States
-  const [selectedPlatform, setSelectedPlatform] =
-    useState<PlatformCategory>("euro");
-  const [selectedServiceId, setSelectedServiceId] = useState<string>(
-    "minor-logbook"
+  // Estimator State
+  const [category, setCategory] = useState<VehicleCategory>("euro");
+  const [selectedScopeId, setSelectedScopeId] = useState("logbook-minor");
+
+  // Booking Form State
+  const [bookName, setBookName] = useState("");
+  const [bookPhone, setBookPhone] = useState("");
+  const [bookEmail, setBookEmail] = useState("");
+  const [bookVehicle, setBookVehicle] = useState("");
+  const [bookService, setBookService] = useState("Logbook Servicing (Minor / Interim)");
+  const [bookDate, setBookDate] = useState("");
+  const [bookNotes, setBookNotes] = useState("");
+  const [loanCarNeeded, setLoanCarNeeded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookingConfirmation, setBookingConfirmation] = useState<{
+    reference: string;
+    name: string;
+    vehicle: string;
+    service: string;
+    date: string;
+    loanCar: boolean;
+  } | null>(null);
+
+  // Detect scroll for sticky navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Compute estimator pricing
+  const currentScope = useMemo(
+    () => SERVICE_SCOPES.find((s) => s.id === selectedScopeId) || SERVICE_SCOPES[0],
+    [selectedScopeId]
   );
 
-  // Booking Intake States
-  const [bookingName, setBookingName] = useState("");
-  const [bookingPhone, setBookingPhone] = useState("");
-  const [bookingVehicle, setBookingVehicle] = useState("");
-  const [bookingService, setBookingService] = useState("minor-logbook");
-  const [bookingDate, setBookingDate] = useState("");
-  const [courtesyCar, setCourtesyCar] = useState(false);
-  const [bookingNotes, setBookingNotes] = useState("");
-  const [bookingSuccess, setBookingSuccess] =
-    useState<BookingSubmission | null>(null);
+  const { priceRange, avgDealer, savings } = useMemo(() => {
+    let rawRange: [number, number] = [0, 0];
+    if (category === "euro") rawRange = currentScope.euroPrice;
+    else if (category === "jap") rawRange = currentScope.japPrice;
+    else rawRange = currentScope.suvPrice;
 
-  // Active Service Object
-  const activeService = useMemo(() => {
-    return (
-      SERVICE_SCOPES.find((s) => s.id === selectedServiceId) ||
-      SERVICE_SCOPES[0]
-    );
-  }, [selectedServiceId]);
+    const min = rawRange[0];
+    const max = rawRange[1];
+    const avgApex = (min + max) / 2;
+    const estDealer = Math.round(avgApex * currentScope.dealerMultiplier);
+    const estSavings = Math.round(estDealer - avgApex);
 
-  // Dynamic Price Calculations based on selected platform and scope
-  const { currentPrice, dealerBenchmarkPrice, dollarSavings, savingsPercent } =
-    useMemo(() => {
-      let price = activeService.euroCost;
-      let benchmark = activeService.euroDealerBenchmark;
+    return {
+      priceRange: `$${min} – $${max}`,
+      avgDealer: `$${estDealer}`,
+      savings: `$${estSavings}`,
+    };
+  }, [category, currentScope]);
 
-      if (selectedPlatform === "jap") {
-        price = activeService.japCost;
-        benchmark = activeService.japDealerBenchmark;
-      } else if (selectedPlatform === "perf") {
-        price = activeService.perfCost;
-        benchmark = activeService.perfDealerBenchmark;
-      }
-
-      const savings = benchmark - price;
-      const percent = Math.round((savings / benchmark) * 100);
-
-      return {
-        currentPrice: price,
-        dealerBenchmarkPrice: benchmark,
-        dollarSavings: savings,
-        savingsPercent: percent,
-      };
-    }, [activeService, selectedPlatform]);
-
-  // Handle Transfer from Estimator to Booking Form
-  const handleTransferToBooking = (serviceIdToSelect?: string) => {
-    const idToUse = serviceIdToSelect || selectedServiceId;
-    setBookingService(idToUse);
-    const bookingSection = document.getElementById("booking");
-    if (bookingSection) {
-      bookingSection.scrollIntoView({ behavior: "smooth" });
+  // Apply estimator selection to booking form
+  const handleApplyToBooking = () => {
+    setBookService(currentScope.name);
+    const bookingElement = document.getElementById("booking");
+    if (bookingElement) {
+      bookingElement.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  // Handle Booking Form Submit
+  // Submit booking
   const handleBookingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!bookingName.trim() || !bookingPhone.trim()) {
-      return;
-    }
+    setIsSubmitting(true);
 
-    const randomSuffix = Math.floor(10000 + Math.random() * 90000);
-    const newSubmission: BookingSubmission = {
-      referenceId: `#APX-${randomSuffix}`,
-      name: bookingName,
-      phone: bookingPhone,
-      vehicle: bookingVehicle || "Vehicle Not Specified",
-      serviceId: bookingService,
-      date: bookingDate || "Next Available Morning (7:30 AM)",
-      courtesyCar,
-      notes: bookingNotes,
-    };
-
-    setBookingSuccess(newSubmission);
+    setTimeout(() => {
+      const refNumber = `APM-${Math.floor(10000 + Math.random() * 90000)}`;
+      setBookingConfirmation({
+        reference: refNumber,
+        name: bookName || "Valued Client",
+        vehicle: bookVehicle || "Vehicle on File",
+        service: bookService,
+        date: bookDate || "Next Available Morning",
+        loanCar: loanCarNeeded,
+      });
+      setIsSubmitting(false);
+    }, 500);
   };
 
   const handleResetBooking = () => {
-    setBookingSuccess(null);
-    setBookingName("");
-    setBookingPhone("");
-    setBookingVehicle("");
-    setBookingNotes("");
-    setCourtesyCar(false);
+    setBookingConfirmation(null);
+    setBookName("");
+    setBookPhone("");
+    setBookEmail("");
+    setBookVehicle("");
+    setBookNotes("");
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] text-[#FFFFFF] font-sans selection:bg-[#0057CB] selection:text-white">
-      {/* 1. TOP AGENCY PORTFOLIO NOTICE */}
+    <div className="min-h-screen bg-[#FFFFFF] text-[#000000] flex flex-col font-sans selection:bg-[#4A3AFF] selection:text-[#FFFFFF]">
+      {/* 1. TOP AGENCY PORTFOLIO BANNER */}
       <aside
-        aria-label="Portfolio Demonstration Banner"
-        className="w-full bg-[#000000] text-[#888888] border-b border-[#4C4C4C]/40 px-4 py-2 text-xs flex flex-wrap items-center justify-between gap-2"
+        aria-label="Agency Portfolio Demonstration"
+        className="bg-[#F8F9FC] border-b border-[#E5E7EB] text-[#4F4F4F] text-xs py-2.5 px-4 relative z-50"
       >
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-[#8DD9E7]" />
-          <span className="font-mono text-[#EDEDED] font-medium tracking-wide">
-            AGENCY PORTFOLIO DEMONSTRATION | High-Conversion Commercial Prototype by I.T Helpers
-          </span>
-        </div>
-        <a
-          href="https://ithelpers.com.au"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-[#0082FF] hover:text-[#FFFFFF] transition-colors duration-150 underline decoration-[#0082FF]/40 underline-offset-2"
-        >
-          <span>Visit Agency (ithelpers.com.au)</span>
-          <ExternalLink className="w-3 h-3" />
-        </a>
-      </aside>
-
-      {/* 2. PRECISION NAVIGATION BAR */}
-      <header className="sticky top-0 z-50 bg-[#000000]/90 backdrop-blur-md border-b border-[#4C4C4C]/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Brand & Live Status Beacon */}
-          <a href="#" className="flex items-center gap-3 group">
-            <div className="w-8 h-8 rounded-[4px] bg-[#0057CB] flex items-center justify-center text-white font-bold text-sm tracking-wider">
-              AP
-            </div>
-            <div className="flex flex-col">
-              <span className="font-semibold text-sm tracking-wider text-[#FFFFFF] group-hover:text-[#0082FF] transition-colors">
-                APEX PRECISION MECHANICAL
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#B3F076] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#B3F076]" />
-                </span>
-                <span className="text-[10px] font-mono text-[#8DD9E7] tracking-wider uppercase">
-                  FACILITY ONLINE · 4 BAYS ACTIVE
-                </span>
-              </div>
-            </div>
-          </a>
-
-          {/* Desktop Nav Anchors */}
-          <nav className="hidden lg:flex items-center gap-6 text-sm text-[#EDEDED]">
-            <a
-              href="#telemetry"
-              className="hover:text-[#0082FF] transition-colors duration-150"
-            >
-              Telemetry
-            </a>
-            <a
-              href="#services"
-              className="hover:text-[#0082FF] transition-colors duration-150"
-            >
-              Services
-            </a>
-            <a
-              href="#estimator"
-              className="hover:text-[#0082FF] transition-colors duration-150"
-            >
-              Cost Estimator
-            </a>
-            <a
-              href="#standards"
-              className="hover:text-[#0082FF] transition-colors duration-150"
-            >
-              Standards
-            </a>
-            <a
-              href="#booking"
-              className="hover:text-[#0082FF] transition-colors duration-150"
-            >
-              Intake
-            </a>
-            <a
-              href="#location"
-              className="hover:text-[#0082FF] transition-colors duration-150"
-            >
-              Facility Hub
-            </a>
-          </nav>
-
-          {/* Hotline & Primary Action Pill */}
-          <div className="hidden sm:flex items-center gap-4">
-            <a
-              href="tel:0289013400"
-              className="flex items-center gap-2 text-xs font-mono text-[#EDEDED] hover:text-[#0082FF] transition-colors"
-            >
-              <Phone className="w-3.5 h-3.5 text-[#0082FF]" />
-              <span>(02) 8901 3400</span>
-            </a>
-            <a
-              href="#booking"
-              className="bg-[#0057CB] hover:bg-[#0082FF] text-white rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-150 inline-flex items-center gap-1.5 shadow-sm"
-            >
-              <span>Reserve Bay</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+          <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#4A3AFF]/10 border border-[#4A3AFF]/20 text-[#4A3AFF] font-bold text-[11px] tracking-wide uppercase">
+              <Sparkles className="w-3 h-3 text-[#4A3AFF]" />
+              Commercial Prototype
+            </span>
+            <span className="font-bold text-[#000000]">
+              AGENCY PORTFOLIO DEMONSTRATION | High-Conversion Commercial Prototype by I.T Helpers
+            </span>
           </div>
 
-          {/* Mobile Menu Hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 text-[#EDEDED] hover:text-white"
-            aria-label="Toggle Navigation Menu"
-          >
-            {mobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-[#4A3AFF] font-mono font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4A3AFF] animate-pulse" />
+              mechanic.ithelpers.com.au
+            </span>
+            <a
+              href="https://ithelpers.com.au"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-[#4A3AFF] hover:text-[#1557FF] font-semibold underline underline-offset-2 transition-colors"
+            >
+              Agency Website
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
+      </aside>
 
-        {/* Mobile Dropdown */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden bg-[#000000] border-b border-[#4C4C4C]/50 px-4 py-4 space-y-3 text-sm">
+      {/* 2. STICKY HEADER & NAVBAR */}
+      <header
+        className={`sticky top-0 z-40 w-full transition-all duration-200 ${
+          scrolled
+            ? "bg-white/95 backdrop-blur-md shadow-sm border-b border-[#E5E7EB]"
+            : "bg-white border-b border-[#E5E7EB]/80"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            {/* Logo */}
             <a
-              href="#telemetry"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[#EDEDED] hover:text-[#0082FF] py-1"
+              href="#"
+              className="flex items-center gap-3 group focus:outline-none rounded-lg p-1"
             >
-              Telemetry & Capabilities
+              <div className="flex items-center justify-center w-11 h-11 rounded-full bg-[#4A3AFF] text-white shadow-md shadow-[#4A3AFF]/25 transition-transform group-hover:scale-105">
+                <Gauge className="w-6 h-6" />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-black text-lg sm:text-xl tracking-tight text-[#000000] leading-none">
+                  APEX <span className="text-[#4A3AFF]">PRECISION</span>
+                </span>
+                <span className="text-[11px] font-semibold tracking-wider uppercase text-[#4F4F4F] mt-1">
+                  Auto Specialists · Sydney NSW
+                </span>
+              </div>
             </a>
-            <a
-              href="#services"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[#EDEDED] hover:text-[#0082FF] py-1"
-            >
-              Six-Tier Service Matrix
-            </a>
-            <a
-              href="#estimator"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[#EDEDED] hover:text-[#0082FF] py-1"
-            >
-              Interactive Cost Estimator
-            </a>
-            <a
-              href="#standards"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[#EDEDED] hover:text-[#0082FF] py-1"
-            >
-              Engineering Standards
-            </a>
-            <a
-              href="#booking"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[#EDEDED] hover:text-[#0082FF] py-1"
-            >
-              Bay Reservation Intake
-            </a>
-            <a
-              href="#location"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-[#EDEDED] hover:text-[#0082FF] py-1"
-            >
-              Alexandria Facility HQ
-            </a>
-            <div className="pt-3 border-t border-[#4C4C4C]/40 flex flex-col gap-2">
+
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center gap-8">
+              <a
+                href="#services"
+                className="text-sm font-semibold text-[#4F4F4F] hover:text-[#4A3AFF] transition-colors"
+              >
+                Services
+              </a>
+              <a
+                href="#why-us"
+                className="text-sm font-semibold text-[#4F4F4F] hover:text-[#4A3AFF] transition-colors"
+              >
+                Why Us
+              </a>
+              <a
+                href="#estimator"
+                className="text-sm font-semibold text-[#4F4F4F] hover:text-[#4A3AFF] transition-colors"
+              >
+                Pricing Estimator
+              </a>
+              <a
+                href="#process"
+                className="text-sm font-semibold text-[#4F4F4F] hover:text-[#4A3AFF] transition-colors"
+              >
+                Our Process
+              </a>
+              <a
+                href="#packages"
+                className="text-sm font-semibold text-[#4F4F4F] hover:text-[#4A3AFF] transition-colors"
+              >
+                Packages
+              </a>
+              <a
+                href="#location"
+                className="text-sm font-semibold text-[#4F4F4F] hover:text-[#4A3AFF] transition-colors"
+              >
+                Location &amp; Hours
+              </a>
+            </nav>
+
+            {/* Direct Phone & Primary Pill Button */}
+            <div className="hidden sm:flex items-center gap-4">
               <a
                 href="tel:0289013400"
-                className="flex items-center justify-center gap-2 py-2 text-sm text-[#EDEDED] bg-[#4C4C4C]/30 rounded-[4px]"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#F8F9FC] hover:bg-[#F0F2F8] border border-[#E5E7EB] text-[#000000] text-sm font-bold transition-all group"
               >
-                <Phone className="w-4 h-4 text-[#0082FF]" />
-                <span>Call Hotline (02) 8901 3400</span>
+                <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                <Phone className="w-3.5 h-3.5 text-[#4A3AFF] group-hover:scale-110 transition-transform" />
+                <span>(02) 8901 3400</span>
+              </a>
+
+              <a
+                href="#booking"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white text-sm font-bold shadow-md shadow-[#4A3AFF]/20 hover:shadow-lg hover:shadow-[#4A3AFF]/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span>Schedule an appointment</span>
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+
+            {/* Mobile Menu Toggle */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <a
+                href="tel:0289013400"
+                aria-label="Call Workshop"
+                className="sm:hidden p-2.5 rounded-full bg-[#F8F9FC] border border-[#E5E7EB] text-[#4A3AFF]"
+              >
+                <Phone className="w-4 h-4" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-2.5 rounded-xl border border-[#E5E7EB] text-[#000000] hover:text-[#4A3AFF] focus:outline-none bg-[#F8F9FC]"
+                aria-label="Toggle mobile navigation menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden bg-white border-b border-[#E5E7EB] px-4 pt-3 pb-6 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col space-y-1">
+              {[
+                { label: "Services", href: "#services" },
+                { label: "Why Us", href: "#why-us" },
+                { label: "Pricing Estimator", href: "#estimator" },
+                { label: "Workshop Process", href: "#process" },
+                { label: "Packages", href: "#packages" },
+                { label: "Book Appointment", href: "#booking" },
+                { label: "Location & Hours", href: "#location" },
+              ].map((link) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-bold text-[#000000] hover:bg-[#F8F9FC] hover:text-[#4A3AFF] transition-colors"
+                >
+                  <span>{link.label}</span>
+                  <ChevronRight className="w-4 h-4 text-[#AAADB0]" />
+                </a>
+              ))}
+            </nav>
+            <div className="pt-3 border-t border-[#E5E7EB] flex flex-col gap-2.5">
+              <a
+                href="tel:0289013400"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#F8F9FC] border border-[#E5E7EB] text-[#000000] font-bold text-sm"
+              >
+                <Phone className="w-4 h-4 text-[#4A3AFF]" />
+                <span>Call Workshop: (02) 8901 3400</span>
               </a>
               <a
                 href="#booking"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center bg-[#0057CB] text-white py-2.5 rounded-full font-semibold text-sm"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-full bg-[#4A3AFF] text-white font-bold text-sm shadow-md"
               >
-                Reserve Bay Online
+                <span>Schedule an appointment</span>
+                <ArrowRight className="w-4 h-4" />
               </a>
             </div>
           </div>
         )}
       </header>
 
-      <main>
-        {/* 3. TECHNICAL HERO SECTION */}
-        <section className="relative overflow-hidden pt-12 pb-16 lg:py-20 border-b border-[#4C4C4C]/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              {/* Left Column */}
-              <div className="lg:col-span-7 space-y-6">
-                {/* Telemetry Badge */}
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#4C4C4C]/30 border border-[#888888]/30 px-3 py-1 text-xs text-[#EDEDED]">
-                  <span className="w-2 h-2 rounded-full bg-[#B3F076]" />
-                  <span className="font-mono tracking-tight">
-                    NSW MOTOR DEALER & REPAIRER LIC #MVRL58291 · BOTANY BAY METRO
-                  </span>
+      {/* MAIN CONTENT CONTAINER */}
+      <main className="flex-1">
+        {/* 3. HERO SPLIT SECTION (High-Contrast Vehicle Imagery + CTA) */}
+        <section className="relative pt-12 pb-20 lg:pt-16 lg:pb-24 bg-[#FFFFFF] border-b border-[#E5E7EB] overflow-hidden">
+          {/* Subtle Ambient Background Gradient */}
+          <div className="absolute top-0 right-0 -mt-20 -mr-20 w-[600px] h-[600px] bg-gradient-to-br from-[#4A3AFF]/5 via-[#1557FF]/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+              {/* Left Column: Headlines & Subtitle & Badges */}
+              <div className="lg:col-span-6 flex flex-col items-start text-left">
+                {/* Subtitle Pill Tag */}
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-5">
+                  <Wrench className="w-3.5 h-3.5" />
+                  <span>Car Repair &amp; Specialists · Sydney</span>
                 </div>
 
-                {/* Primary Display Headline */}
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight text-[#FFFFFF] leading-snug">
-                  Dealer Precision. Independent Honesty.
+                {/* Massive Headline */}
+                <h1 className="text-4xl sm:text-5xl xl:text-6xl font-black text-[#000000] tracking-tight leading-[1.08] mb-6">
+                  Auto maintenance, <br className="hidden sm:inline" />
+                  service <span className="text-[#4A3AFF]">&amp; repair</span>
                 </h1>
 
-                {/* Technical Body Copy */}
-                <p className="text-sm sm:text-base text-[#EDEDED] leading-relaxed max-w-2xl">
-                  Maintain your statutory new vehicle factory warranty under Australian Consumer Law (ACL)
-                  without dealership markups or inflated surcharges. Operating genuine ODIS, ISTA, and
-                  XENTRY diagnostic software suites, precision micrometers, and certified master technicians
-                  dedicated to uncompromising mechanical telemetry.
+                {/* Value Proposition */}
+                <p className="text-base sm:text-lg text-[#4F4F4F] leading-relaxed mb-8 max-w-xl">
+                  Dealer precision with independent honesty. We perform dealer-grade computer
+                  diagnostics and statutory logbook servicing to exact manufacturer specifications—
+                  <strong className="text-[#000000] font-bold">
+                    {" "}maintaining your new car factory warranty{" "}
+                  </strong>
+                  with OEM parts, without dealership markups.
                 </p>
 
-                {/* High-Density Assurance Points */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-3 bg-[#000000]">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#B3F076]">
-                      <Check className="w-3.5 h-3.5" />
-                      <span>ACL Section 54</span>
-                    </div>
-                    <p className="text-[11px] text-[#888888] mt-1">
-                      Statutory new car warranty 100% preserved legally.
-                    </p>
-                  </div>
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-3 bg-[#000000]">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#8DD9E7]">
-                      <Cpu className="w-3.5 h-3.5" />
-                      <span>OEM Software</span>
-                    </div>
-                    <p className="text-[11px] text-[#888888] mt-1">
-                      Direct factory portal coding: BMW, VW, Mercedes.
-                    </p>
-                  </div>
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-3 bg-[#000000]">
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-[#FFE372]">
-                      <Gauge className="w-3.5 h-3.5" />
-                      <span>Zero Surcharges</span>
-                    </div>
-                    <p className="text-[11px] text-[#888888] mt-1">
-                      Transparent upfront quotes prior to fastener removal.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Action CTA Group */}
-                <div className="flex flex-wrap items-center gap-4 pt-2">
+                {/* Buttons Row */}
+                <div className="flex flex-wrap items-center gap-3.5 mb-10">
                   <a
-                    href="#estimator"
-                    className="bg-[#0057CB] hover:bg-[#0082FF] text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors duration-150 inline-flex items-center gap-2 shadow-sm"
+                    href="#booking"
+                    className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white text-sm sm:text-base font-bold shadow-lg shadow-[#4A3AFF]/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
                   >
-                    <span>Calculate Service Cost</span>
+                    <span>Schedule an appointment</span>
                     <ArrowRight className="w-4 h-4" />
                   </a>
+
                   <a
-                    href="#standards"
-                    className="border border-[#4C4C4C] text-[#EDEDED] hover:bg-[#4C4C4C]/20 rounded-full px-6 py-3 text-sm font-medium transition-colors duration-150 inline-flex items-center gap-2"
+                    href="#services"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-full bg-white hover:bg-[#F8F9FC] border border-[#E5E7EB] text-[#000000] text-sm sm:text-base font-bold transition-colors"
                   >
-                    <span>Diagnostic Standards</span>
+                    <span>Browse services</span>
                   </a>
+                </div>
+
+                {/* Badges / Proof Strip */}
+                <div className="w-full grid grid-cols-1 sm:grid-cols-3 gap-3 pt-6 border-t border-[#E5E7EB]">
+                  {/* Badge 1 */}
+                  <div className="p-3.5 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] flex items-start gap-3">
+                    <div className="p-2 rounded-full bg-[#10B981]/15 text-[#10B981] shrink-0 mt-0.5">
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#000000] leading-snug">
+                        Warranty Protected
+                      </div>
+                      <div className="text-[11px] text-[#4F4F4F] mt-0.5 leading-snug">
+                        100% ACL compliant
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Badge 2 */}
+                  <div className="p-3.5 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] flex items-start gap-3">
+                    <div className="p-2 rounded-full bg-[#4A3AFF]/15 text-[#4A3AFF] shrink-0 mt-0.5">
+                      <Award className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#000000] leading-snug">
+                        OEM Direct Parts
+                      </div>
+                      <div className="text-[11px] text-[#4F4F4F] mt-0.5 leading-snug">
+                        Bosch, Mahle, Brembo
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Badge 3 */}
+                  <div className="p-3.5 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] flex items-start gap-3">
+                    <div className="p-2 rounded-full bg-[#1557FF]/15 text-[#1557FF] shrink-0 mt-0.5">
+                      <Clock className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#000000] leading-snug">
+                        24-Mo Guarantee
+                      </div>
+                      <div className="text-[11px] text-[#4F4F4F] mt-0.5 leading-snug">
+                        20,000km warranty
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Right Column: Framed Photographic Quarter Visual */}
-              <div className="lg:col-span-5">
-                <div className="relative rounded-[4px] border border-[#4C4C4C]/50 bg-[#000000] p-2 overflow-hidden shadow-lg group">
-                  <div className="relative aspect-[4/3] rounded-[4px] overflow-hidden bg-[#111111]">
-                    <Image
-                      src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80"
-                      alt="Apex Precision Mechanical diagnostic bay with high-performance chassis"
-                      width={700}
-                      height={525}
-                      unoptimized
-                      priority
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-transparent opacity-80" />
+              {/* Right Column: Hero High-Contrast Vehicle Imagery (CarRepair X Style) */}
+              <div className="lg:col-span-6">
+                <div className="relative rounded-2xl overflow-hidden border border-[#E5E7EB] shadow-2xl group bg-[#000000]">
+                  {/* Vehicle Image */}
+                  <img
+                    src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80"
+                    alt="European & Japanese Automotive Specialist Precision Engineering"
+                    className="w-full h-[380px] sm:h-[480px] object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                  />
+                  {/* Angular Cut Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  
+                  {/* Floating Tech Pill Badge */}
+                  <div className="absolute top-5 left-5 bg-white/95 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 text-xs font-bold text-[#000000] flex items-center gap-2 shadow-lg">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] animate-pulse" />
+                    <span>Certified Master Technicians On Duty</span>
+                  </div>
 
-                    {/* Live Telemetry Overlays */}
-                    <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      <div className="inline-flex items-center gap-1.5 rounded-full bg-[#000000]/80 backdrop-blur border border-[#4C4C4C]/60 px-3 py-1 text-xs text-white">
-                        <span className="w-2 h-2 rounded-full bg-[#B3F076]" />
-                        <span>OEM Parts Sourced</span>
+                  {/* Bottom Stats Banner inside Image */}
+                  <div className="absolute bottom-5 left-5 right-5 p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-[#AAADB0] font-bold">
+                        Specialist Marque Diagnostic Suite
                       </div>
-                      <div className="inline-flex items-center gap-1.5 rounded-full bg-[#000000]/80 backdrop-blur border border-[#4C4C4C]/60 px-3 py-1 text-xs text-white">
-                        <span className="w-2 h-2 rounded-full bg-[#8DD9E7]" />
-                        <span>PicoScope Telemetry Verified</span>
+                      <div className="text-xs sm:text-sm font-bold text-white mt-0.5">
+                        BMW M · AMG · Audi RS · Porsche · Lexus
                       </div>
                     </div>
-
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs font-mono text-[#EDEDED] bg-[#000000]/85 backdrop-blur px-3 py-2 rounded-[4px] border border-[#4C4C4C]/50">
-                      <div>
-                        <span className="text-[#888888] block text-[9px] uppercase">
-                          Active Telemetry
-                        </span>
-                        <span className="text-[#B3F076]">ODIS VAG CAN-Bus Active</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[#888888] block text-[9px] uppercase">
-                          Bay 02 Status
-                        </span>
-                        <span>Calibrated 0.01mm</span>
-                      </div>
-                    </div>
+                    <a
+                      href="#estimator"
+                      className="px-4 py-2 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white text-xs font-bold transition-colors shrink-0"
+                    >
+                      Instant Estimate →
+                    </a>
                   </div>
                 </div>
               </div>
@@ -646,924 +576,1295 @@ export default function ApexMechanicalPage() {
           </div>
         </section>
 
-        {/* 4. REAL-TIME TELEMETRY & CAPABILITY BAR (#telemetry) */}
-        <section
-          id="telemetry"
-          className="py-10 bg-[#000000] border-b border-[#4C4C4C]/30"
-        >
+        {/* 4. INTERACTIVE SERVICE ESTIMATOR SECTION */}
+        <section id="estimator" className="py-16 bg-[#F8F9FC] border-b border-[#E5E7EB]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#0082FF]" />
-                <span className="text-xs font-mono tracking-wider text-[#888888] uppercase">
-                  Workshop Telemetry & Statutory Verification Bar
-                </span>
+            <div className="text-center max-w-2xl mx-auto mb-10">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-3">
+                Transparent Pricing
               </div>
-              <span className="text-[11px] font-mono text-[#B3F076]">
-                LIVE FEED · BOTANY BAY FACILITY
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Metric 01 */}
-              <div className="bg-[#000000] border border-[#4C4C4C]/40 rounded-[4px] p-4 flex flex-col justify-between hover:border-[#0082FF] transition-colors duration-150">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-[#888888] uppercase font-mono">
-                    Metric 01 · Compliance
-                  </span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#B3F076]" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-[#FFFFFF]">
-                    Warranty Safe
-                  </h2>
-                  <p className="text-xs text-[#EDEDED] mt-0.5">
-                    100% ACL Statutory Protection
-                  </p>
-                </div>
-                <p className="text-[11px] text-[#888888] mt-3 pt-2 border-t border-[#4C4C4C]/30">
-                  Dealer networks cannot void your Australian Consumer Law warranty.
-                </p>
-              </div>
-
-              {/* Metric 02 */}
-              <div className="bg-[#000000] border border-[#4C4C4C]/40 rounded-[4px] p-4 flex flex-col justify-between hover:border-[#0082FF] transition-colors duration-150">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-[#888888] uppercase font-mono">
-                    Metric 02 · Diagnostics
-                  </span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#8DD9E7]" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-[#FFFFFF]">
-                    Tooling Parity
-                  </h2>
-                  <p className="text-xs text-[#EDEDED] mt-0.5">
-                    ODIS · ISTA · XENTRY · G-Scan
-                  </p>
-                </div>
-                <p className="text-[11px] text-[#888888] mt-3 pt-2 border-t border-[#4C4C4C]/30">
-                  Direct online portal licensing for VW, Audi, BMW, and Mercedes-Benz.
-                </p>
-              </div>
-
-              {/* Metric 03 */}
-              <div className="bg-[#000000] border border-[#4C4C4C]/40 rounded-[4px] p-4 flex flex-col justify-between hover:border-[#0082FF] transition-colors duration-150">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-[#888888] uppercase font-mono">
-                    Metric 03 · Hardware Grade
-                  </span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FFFFFF]" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-[#FFFFFF]">
-                    Component Grade
-                  </h2>
-                  <p className="text-xs text-[#EDEDED] mt-0.5">
-                    OEM Mahle, Mann, Brembo, Bilstein
-                  </p>
-                </div>
-                <p className="text-[11px] text-[#888888] mt-3 pt-2 border-t border-[#4C4C4C]/30">
-                  Tier-1 European and Japanese precision parts directly unboxed.
-                </p>
-              </div>
-
-              {/* Metric 04 */}
-              <div className="bg-[#000000] border border-[#4C4C4C]/40 rounded-[4px] p-4 flex flex-col justify-between hover:border-[#0082FF] transition-colors duration-150">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-[#888888] uppercase font-mono">
-                    Metric 04 · Handover
-                  </span>
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#FFE372]" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-[#FFFFFF]">
-                    Turnaround Index
-                  </h2>
-                  <p className="text-xs text-[#EDEDED] mt-0.5">
-                    Same-Day Handover Guaranteed
-                  </p>
-                </div>
-                <p className="text-[11px] text-[#888888] mt-3 pt-2 border-t border-[#4C4C4C]/30">
-                  Drop off before 9:00 AM, collected by 5:00 PM with SMS inspection video.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. INTERACTIVE SERVICE COST ESTIMATOR (#estimator) */}
-        <section
-          id="estimator"
-          className="py-16 bg-[#000000] border-b border-[#4C4C4C]/30"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mb-8">
-              <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#0082FF] uppercase tracking-wider mb-2">
-                <Gauge className="w-3.5 h-3.5" />
-                <span>Diagnostic Cost Telemetry Model</span>
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-[#FFFFFF]">
-                Interactive Service Cost Estimator
+              <h2 className="text-3xl font-black text-[#000000] tracking-tight">
+                Instant Service Estimator
               </h2>
-              <p className="text-sm text-[#EDEDED] mt-2">
-                Evaluate immediate upfront service costs benchmarked against official franchise
-                dealership networks. Zero surcharges, zero undisclosed line items.
+              <p className="text-sm text-[#4F4F4F] mt-1">
+                Select your vehicle platform and required service scope to view transparent Sydney rates.
               </p>
             </div>
 
-            {/* Estimator Container Card */}
-            <div className="rounded-[4px] bg-[#000000] border border-[#4C4C4C]/50 p-6 lg:p-8 shadow-lg">
-              {/* Step 1: Platform Selection */}
-              <div className="space-y-3 mb-8">
-                <label className="text-xs font-mono uppercase text-[#888888] tracking-wider block">
-                  Step 01 · Select Chassis Engineering Platform
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {PLATFORMS.map((platform) => {
-                    const isSelected = selectedPlatform === platform.id;
-                    return (
-                      <button
-                        key={platform.id}
-                        type="button"
-                        onClick={() => setSelectedPlatform(platform.id)}
-                        className={`text-left p-4 rounded-[4px] border transition-all duration-150 flex flex-col justify-between ${
-                          isSelected
-                            ? "bg-[#4C4C4C]/30 border-[#0082FF] text-[#FFFFFF]"
-                            : "bg-[#000000] border-[#4C4C4C]/40 text-[#EDEDED] hover:border-[#888888]"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-semibold">
-                              {platform.name}
-                            </span>
-                            {isSelected && (
-                              <CheckCircle2 className="w-4 h-4 text-[#0082FF]" />
-                            )}
-                          </div>
-                          <p className="text-xs text-[#888888] mt-1">
-                            {platform.subLabel}
-                          </p>
-                        </div>
-                        <div className="mt-3 pt-2 border-t border-[#4C4C4C]/30">
-                          <span className="text-[10px] font-mono text-[#8DD9E7]">
-                            {platform.badge}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Step 2: Service Scope Selection */}
-              <div className="space-y-3 mb-8">
-                <label className="text-xs font-mono uppercase text-[#888888] tracking-wider block">
-                  Step 02 · Select Calibration / Maintenance Scope
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                  {SERVICE_SCOPES.map((scope) => {
-                    const isSelected = selectedServiceId === scope.id;
-                    return (
-                      <button
-                        key={scope.id}
-                        type="button"
-                        onClick={() => setSelectedServiceId(scope.id)}
-                        className={`px-3 py-2.5 rounded-[4px] border text-xs text-left transition-all duration-150 ${
-                          isSelected
-                            ? "bg-[#0057CB] border-[#0082FF] text-white font-medium"
-                            : "bg-[#000000] border-[#4C4C4C]/40 text-[#EDEDED] hover:border-[#888888]"
-                        }`}
-                      >
-                        <div className="truncate font-semibold">{scope.name}</div>
-                        <div
-                          className={`text-[10px] truncate mt-0.5 ${
-                            isSelected ? "text-[#EDEDED]" : "text-[#888888]"
-                          }`}
-                        >
-                          {scope.turnaroundBadge}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Real-Time Telemetry Calculation Readout */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-6 bg-[#000000] border border-[#4C4C4C]/40 rounded-[4px]">
-                {/* Pricing Metrics */}
-                <div className="lg:col-span-5 space-y-4 border-b lg:border-b-0 lg:border-r border-[#4C4C4C]/30 pb-6 lg:pb-0 lg:pr-6">
-                  <div>
-                    <span className="text-xs font-mono text-[#888888] uppercase block">
-                      Apex Precision Workshop Cost
-                    </span>
-                    <div className="flex items-baseline gap-2 mt-1">
-                      <span className="text-3xl font-bold text-[#FFFFFF]">
-                        ${currentPrice}
-                      </span>
-                      <span className="text-xs text-[#8DD9E7] font-mono">
-                        Inc. GST & Fluids
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#888888]">Dealership Benchmark:</span>
-                      <span className="text-[#EDEDED] line-through font-mono">
-                        ${dealerBenchmarkPrice}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs bg-[#4C4C4C]/20 p-2 rounded-[4px] border border-[#4C4C4C]/30">
-                      <span className="text-[#B3F076] font-semibold">
-                        Direct Client Savings:
-                      </span>
-                      <span className="text-[#B3F076] font-mono font-bold">
-                        Save ${dollarSavings} ({savingsPercent}% Lower)
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-[#888888]">
-                      <span>Turnaround Window:</span>
-                      <span className="text-[#FFFFFF] font-mono">
-                        {activeService.duration}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Transfer to Booking CTA */}
-                  <div className="pt-3">
+            <div className="max-w-4xl mx-auto rounded-2xl bg-white border border-[#E5E7EB] p-6 sm:p-8 shadow-xl shadow-[#14142B]/5">
+              {/* Category Tabs: Euro, Jap, SUV */}
+              <div>
+                <span className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-3">
+                  1. Select Vehicle Platform
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: "euro", label: "Euro Performance", sub: "BMW, Benz, Audi, Porsche, VW" },
+                    { id: "jap", label: "Japanese Precision", sub: "Lexus, Toyota GR, Subaru, Honda" },
+                    { id: "suv", label: "Performance SUV", sub: "Macan, X5, RS Q8, Prado" },
+                  ].map((t) => (
                     <button
+                      key={t.id}
                       type="button"
-                      onClick={() => handleTransferToBooking()}
-                      className="w-full bg-[#0057CB] hover:bg-[#0082FF] text-white rounded-full py-3 text-sm font-semibold transition-colors duration-150 inline-flex items-center justify-center gap-2"
+                      onClick={() => setCategory(t.id as VehicleCategory)}
+                      className={`p-3 rounded-xl border text-left transition-all ${
+                        category === t.id
+                          ? "bg-[#4A3AFF] border-[#4A3AFF] text-white shadow-md shadow-[#4A3AFF]/20"
+                          : "bg-[#F8F9FC] border-[#E5E7EB] text-[#4F4F4F] hover:border-[#4A3AFF]/40"
+                      }`}
                     >
-                      <span>Transfer Estimate to Workshop Reservation</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <div className={`text-xs font-bold ${category === t.id ? "text-white" : "text-[#000000]"}`}>
+                        {t.label}
+                      </div>
+                      <div className={`text-[11px] mt-0.5 truncate ${category === t.id ? "text-white/80" : "text-[#AAADB0]"}`}>
+                        {t.sub}
+                      </div>
                     </button>
-                    <span className="block text-[11px] text-center text-[#888888] mt-2">
-                      Pre-populates selected tier into the intake registry below.
-                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Service Scope Selector */}
+              <div className="mt-6">
+                <label
+                  htmlFor="scope-selector"
+                  className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-2"
+                >
+                  2. Select Service Scope
+                </label>
+                <select
+                  id="scope-selector"
+                  value={selectedScopeId}
+                  onChange={(e) => setSelectedScopeId(e.target.value)}
+                  className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000] cursor-pointer font-medium"
+                >
+                  {SERVICE_SCOPES.map((scope) => (
+                    <option key={scope.id} value={scope.id}>
+                      {scope.name} ({scope.duration})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Calculated Price & Savings Box */}
+              <div className="mt-6 p-5 sm:p-6 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-[#4F4F4F] font-semibold">
+                      Estimated Apex Workshop Investment
+                    </div>
+                    <div className="flex items-baseline gap-2 mt-1">
+                      <span className="text-3xl sm:text-4xl font-black text-[#000000] tracking-tight">
+                        {priceRange}
+                      </span>
+                      <span className="text-xs text-[#4F4F4F]">inc. GST</span>
+                    </div>
+                    <div className="text-xs text-[#4A3AFF] font-bold mt-1.5 flex items-center gap-2">
+                      <span>Franchised dealership quote: ~{avgDealer}</span>
+                      <span className="px-2 py-0.5 rounded-full bg-[#10B981]/15 text-[#10B981] font-bold">
+                        Save ~{savings}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="sm:text-right">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-[#E5E7EB] text-xs font-bold text-[#000000]">
+                      <Clock className="w-3.5 h-3.5 text-[#4A3AFF]" />
+                      <span>{currentScope.duration}</span>
+                    </div>
+                    <div className="text-[11px] text-[#4F4F4F] mt-1 font-medium">
+                      Same-day drop-off 7:30 AM
+                    </div>
                   </div>
                 </div>
 
-                {/* Itemized Technical Checklist */}
-                <div className="lg:col-span-7 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-[#888888] uppercase">
-                      Itemized Technical Checklist · {activeService.name}
-                    </span>
-                    <span className="text-[11px] font-mono text-[#B3F076]">
-                      {activeService.technicalInclusions.length} PROTOCOLS
-                    </span>
+                {/* What is Included */}
+                <div className="mt-5 pt-4 border-t border-[#E5E7EB] space-y-1.5">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-[#000000] mb-2">
+                    Included with this service:
                   </div>
-
-                  <ul className="space-y-2.5">
-                    {activeService.technicalInclusions.map((item, idx) => (
-                      <li
-                        key={idx}
-                        className="flex items-start gap-2.5 text-xs text-[#EDEDED] leading-relaxed"
-                      >
-                        <span className="w-4 h-4 rounded-full bg-[#B3F076]/20 text-[#B3F076] flex items-center justify-center shrink-0 mt-0.5">
-                          <Check className="w-2.5 h-2.5" />
-                        </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {currentScope.includes.map((item, idx) => (
+                      <div key={idx} className="flex items-start gap-2 text-xs text-[#4F4F4F]">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0 mt-0.5" />
                         <span>{item}</span>
-                      </li>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
                 </div>
+
+                {/* Action Button */}
+                <button
+                  type="button"
+                  onClick={handleApplyToBooking}
+                  className="mt-6 w-full inline-flex items-center justify-center gap-2 py-3.5 px-4 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white text-xs sm:text-sm font-bold shadow-md shadow-[#4A3AFF]/20 transition-all"
+                >
+                  <span>Lock In Estimate &amp; Proceed to Booking</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 6. SIX-TIER SERVICES CAPABILITY MATRIX (#services) */}
-        <section
-          id="services"
-          className="py-16 bg-[#000000] border-b border-[#4C4C4C]/30"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mb-10">
-              <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#0082FF] uppercase tracking-wider mb-2">
-                <Wrench className="w-3.5 h-3.5" />
-                <span>Mechanical Engineering Disciplines</span>
+        {/* 5. ABOUT / "WHAT MAKES US DIFFERENT" (Technician Imagery) */}
+        <section id="why-us" className="py-20 lg:py-28 bg-[#FFFFFF] border-b border-[#E5E7EB] relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              {/* Left Column: Technician Imagery */}
+              <div className="lg:col-span-5">
+                <div className="relative rounded-2xl overflow-hidden border border-[#E5E7EB] shadow-xl group bg-[#000000]">
+                  <img
+                    src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1000&q=80"
+                    alt="Certified Master Technician Interrogating Diagnostics"
+                    className="w-full h-[420px] sm:h-[500px] object-cover transition-transform duration-700 group-hover:scale-105 opacity-95"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent" />
+                  
+                  {/* Floating Tags */}
+                  <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-bold text-[#000000] border border-[#E5E7EB] shadow">
+                    Guild Certified Technicians
+                  </div>
+                  <div className="absolute bottom-4 left-4 right-4 p-4 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white">
+                    <div className="text-xs font-bold">18+ Years Specialized Trade Experience</div>
+                    <div className="text-[11px] text-[#AAADB0] mt-0.5">
+                      European Guild trained with dedicated oscilloscope telemetry.
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-[#FFFFFF]">
-                Six-Tier Services Capability Matrix
+
+              {/* Right Column: Copy & Benefits */}
+              <div className="lg:col-span-7">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                  Why Us
+                </div>
+                <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-6">
+                  What makes us different?
+                </h2>
+                <p className="text-base text-[#4F4F4F] leading-relaxed mb-6">
+                  Unlike volume dealership service departments staffed by first-year apprentices under
+                  commission-driven quotas, Apex Precision Mechanical is operated by Master Guild
+                  Technicians dedicated to precision European and Japanese automotive engineering.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB]">
+                    <div className="text-sm font-bold text-[#000000] mb-1">
+                      Direct Photo &amp; Video Walkaround
+                    </div>
+                    <div className="text-xs text-[#4F4F4F]">
+                      High-resolution photographic evidence sent to your phone before any wrench turns.
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB]">
+                    <div className="text-sm font-bold text-[#000000] mb-1">
+                      Zero Commission Upsells
+                    </div>
+                    <div className="text-xs text-[#4F4F4F]">
+                      Honest advisory. We never bill for unneeded flushes or surprise add-on services.
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB]">
+                    <div className="text-sm font-bold text-[#000000] mb-1">
+                      Complimentary Loan Cars
+                    </div>
+                    <div className="text-xs text-[#4F4F4F]">
+                      Clean automatic courtesy vehicles available free upon booking reservation.
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB]">
+                    <div className="text-sm font-bold text-[#000000] mb-1">
+                      24-Mo / 20k km Guarantee
+                    </div>
+                    <div className="text-xs text-[#4F4F4F]">
+                      Complete nationwide warranty backing every supplied part and workshop labor hour.
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href="#booking"
+                  className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white text-sm font-bold shadow-md shadow-[#4A3AFF]/20 transition-all"
+                >
+                  <span>Schedule an appointment</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 6. SERVICES MATRIX (With Capability Images) */}
+        <section id="services" className="py-20 lg:py-28 bg-[#F8F9FC] border-b border-[#E5E7EB]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                Services
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-4">
+                We offer a wide range of car services
               </h2>
-              <p className="text-sm text-[#EDEDED] mt-2">
-                Every service tier is executed using calibrated OEM test equipment, factory torque
-                specifications, and transparent digital documentation.
+              <p className="text-sm sm:text-base text-[#4F4F4F] leading-relaxed">
+                Dealer-grade engineering performed strictly according to factory technical handbooks.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {SERVICE_SCOPES.map((service, idx) => (
-                <div
-                  key={service.id}
-                  className="rounded-[4px] bg-[#000000] border border-[#4C4C4C]/40 p-5 flex flex-col justify-between hover:border-[#0082FF] transition-colors duration-150 group"
-                >
-                  <div>
-                    {/* Visual Header with Desaturated Monochrome Base */}
-                    <div className="relative aspect-[16/9] rounded-[4px] overflow-hidden mb-4 bg-[#111111]">
-                      <Image
-                        src={service.imageUrl}
-                        alt={service.name}
-                        width={600}
-                        height={338}
-                        unoptimized
-                        className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-300"
-                      />
-                      <div className="absolute top-2 right-2 bg-[#000000]/80 backdrop-blur px-2.5 py-0.5 rounded-full text-[10px] font-mono text-[#B3F076] border border-[#4C4C4C]/50">
-                        {service.turnaroundBadge}
-                      </div>
-                      <div className="absolute bottom-2 left-2 bg-[#000000]/80 backdrop-blur px-2.5 py-0.5 rounded-[4px] text-[10px] font-mono text-[#EDEDED] border border-[#4C4C4C]/50">
-                        0{idx + 1} · {service.telemetryMetric}
-                      </div>
-                    </div>
-
-                    <div className="text-xs font-mono text-[#0082FF] uppercase mb-1">
-                      {service.scopeTag}
-                    </div>
-                    <h3 className="text-base font-semibold text-[#FFFFFF] group-hover:text-[#0082FF] transition-colors">
-                      {service.name}
-                    </h3>
-                    <p className="text-xs text-[#888888] mt-2 leading-relaxed">
-                      {service.summary}
-                    </p>
-
-                    <div className="mt-4 pt-3 border-t border-[#4C4C4C]/30 space-y-1.5">
-                      <span className="text-[10px] font-mono text-[#888888] uppercase block">
-                        Core Diagnostic Deliverables:
+              {/* Service 1: Maintenance / Engine Bay (Image: 1486006920555-c77dce18193b) */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#4A3AFF] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-[#4A3AFF]/5 group">
+                <div>
+                  <div className="relative h-48 overflow-hidden bg-black">
+                    <img
+                      src="https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80"
+                      alt="Engine Bay Scheduled Logbook Servicing"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-white/95 text-[#10B981] shadow">
+                        100% Warranty Safe
                       </span>
-                      {service.technicalInclusions.slice(0, 3).map((inc, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-1.5 text-xs text-[#EDEDED]"
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#0082FF]" />
-                          <span className="truncate">{inc}</span>
-                        </div>
-                      ))}
                     </div>
                   </div>
-
-                  <div className="mt-6 pt-3 border-t border-[#4C4C4C]/30 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] text-[#888888] uppercase font-mono block">
-                        Estimated Scope
-                      </span>
-                      <span className="text-xs text-[#B3F076] font-mono">
-                        From ${service.japCost} (Inc. GST)
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedServiceId(service.id);
-                        handleTransferToBooking(service.id);
-                      }}
-                      className="bg-[#4C4C4C]/30 hover:bg-[#0057CB] text-[#EDEDED] hover:text-white px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-150 inline-flex items-center gap-1"
-                    >
-                      <span>Select Service</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </button>
+                  <div className="p-6">
+                    <h3 className="text-lg font-black text-[#000000] mb-2 group-hover:text-[#4A3AFF] transition-colors">
+                      Logbook Servicing &amp; Maintenance
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed mb-4">
+                      Manufacturer interval servicing preserving factory warranty terms. Digital service
+                      books stamped and updated on manufacturer cloud records.
+                    </p>
+                    <ul className="space-y-1.5 text-xs text-[#000000]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                        <span>OEM synthetic oils &amp; Mann/Mahle filtration</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                        <span>62-point digital mechanical audit</span>
+                      </li>
+                    </ul>
                   </div>
                 </div>
-              ))}
+                <div className="p-6 pt-0 border-t border-[#E5E7EB]/60 mt-4 flex justify-between items-center text-xs">
+                  <span className="font-mono text-[#AAADB0]">ISTA · ODIS · Xentry</span>
+                  <a href="#booking" className="font-bold text-[#4A3AFF] hover:underline flex items-center gap-1">
+                    Book Service <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Service 2: Brakes & Wheels (Image: 1625047509168-a7026f36de04) */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#4A3AFF] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-[#4A3AFF]/5 group">
+                <div>
+                  <div className="relative h-48 overflow-hidden bg-black">
+                    <img
+                      src="https://images.unsplash.com/photo-1625047509168-a7026f36de04?auto=format&fit=crop&w=800&q=80"
+                      alt="Performance Brakes & Caliper Hydraulics"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-white/95 text-[#1557FF] shadow">
+                        Brembo Tier-1
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-black text-[#000000] mb-2 group-hover:text-[#4A3AFF] transition-colors">
+                      Performance Brakes &amp; Wheels
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed mb-4">
+                      Rotor micrometer runout testing, Brembo friction compound pads, high-temperature
+                      hygroscopic fluid tests, and caliper hydraulic rebuilds.
+                    </p>
+                    <ul className="space-y-1.5 text-xs text-[#000000]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                        <span>Brembo, Pagid &amp; Textar compounds</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                        <span>DOT 4/5.1 pressure fluid flush</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="p-6 pt-0 border-t border-[#E5E7EB]/60 mt-4 flex justify-between items-center text-xs">
+                  <span className="font-mono text-[#AAADB0]">Micrometer Calibrated</span>
+                  <a href="#booking" className="font-bold text-[#4A3AFF] hover:underline flex items-center gap-1">
+                    Book Service <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Service 3: Computer Diagnostics (Image: 1563720223185-11003d516935) */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#4A3AFF] overflow-hidden flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:shadow-[#4A3AFF]/5 group">
+                <div>
+                  <div className="relative h-48 overflow-hidden bg-black">
+                    <img
+                      src="https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80"
+                      alt="Computer Diagnostics & Electronic ECU Interrogation"
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
+                    />
+                    <div className="absolute top-3 right-3">
+                      <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-white/95 text-[#4A3AFF] shadow">
+                        Factory Telemetry
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-lg font-black text-[#000000] mb-2 group-hover:text-[#4A3AFF] transition-colors">
+                      Computer Diagnostics &amp; ECU
+                    </h3>
+                    <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed mb-4">
+                      Interrogation of proprietary CAN-bus and FlexRay networks. Live sensor waveform
+                      analysis and oscilloscope testing for zero guesswork.
+                    </p>
+                    <ul className="space-y-1.5 text-xs text-[#000000]">
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                        <span>Deep ECU module fault decoding</span>
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                        <span>PicoScope 4-channel wave isolation</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div className="p-6 pt-0 border-t border-[#E5E7EB]/60 mt-4 flex justify-between items-center text-xs">
+                  <span className="font-mono text-[#AAADB0]">ISTA · ODIS · Techstream</span>
+                  <a href="#booking" className="font-bold text-[#4A3AFF] hover:underline flex items-center gap-1">
+                    Book Service <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Service 4: Driveline & DSG / ZF */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#4A3AFF] p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-[#4A3AFF]/5 group">
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-12 h-12 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] flex items-center justify-center group-hover:bg-[#4A3AFF] group-hover:text-white transition-colors">
+                      <Cog className="w-6 h-6" />
+                    </div>
+                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF]">
+                      ZF &amp; DSG
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-[#000000] mb-2 group-hover:text-[#4A3AFF] transition-colors">
+                    Driveline &amp; DSG / ZF
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed mb-5">
+                    Specialist transmission fluid replacement and clutch adaptation resets for ZF
+                    8-Speed, dual-clutch DSG/S-Tronic, and Haldex AWD couplings.
+                  </p>
+                  <ul className="space-y-2 text-xs text-[#000000] mb-6">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                      <span>ZF Lifeguard Fluid &amp; filter pan kits</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                      <span>Haldex pump screen maintenance</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="pt-4 border-t border-[#E5E7EB] flex justify-between items-center text-xs">
+                  <span className="font-mono text-[#AAADB0]">Mechatronic Adaptation</span>
+                  <a href="#booking" className="font-bold text-[#4A3AFF] hover:underline flex items-center gap-1">
+                    Book Service <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Service 5: Suspension & 3D Alignment */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#4A3AFF] p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-[#4A3AFF]/5 group">
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-12 h-12 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] flex items-center justify-center group-hover:bg-[#4A3AFF] group-hover:text-white transition-colors">
+                      <Compass className="w-6 h-6" />
+                    </div>
+                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#1557FF]/10 text-[#1557FF]">
+                      3D Laser Precision
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-[#000000] mb-2 group-hover:text-[#4A3AFF] transition-colors">
+                    Suspension &amp; 3D Alignment
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed mb-5">
+                    Hunter HawkEye 3D laser geometry calibration, control arm hydraulic bushing
+                    pressing, and Bilstein/KW damper replacements.
+                  </p>
+                  <ul className="space-y-2 text-xs text-[#000000] mb-6">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                      <span>Hunter 3D laser toe/camber setup</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                      <span>Hydraulic bushing press extraction</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="pt-4 border-t border-[#E5E7EB] flex justify-between items-center text-xs">
+                  <span className="font-mono text-[#AAADB0]">Hunter HawkEye 3D</span>
+                  <a href="#booking" className="font-bold text-[#4A3AFF] hover:underline flex items-center gap-1">
+                    Book Service <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+
+              {/* Service 6: Pre-Purchase Inspections */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#4A3AFF] p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:shadow-[#4A3AFF]/5 group">
+                <div>
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="w-12 h-12 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] flex items-center justify-center group-hover:bg-[#4A3AFF] group-hover:text-white transition-colors">
+                      <SearchCheck className="w-6 h-6" />
+                    </div>
+                    <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#10B981]/10 text-[#10B981]">
+                      120-Point Audit
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-black text-[#000000] mb-2 group-hover:text-[#4A3AFF] transition-colors">
+                    Pre-Purchase Inspections
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed mb-5">
+                    Rigorous appraisal for pre-owned European and Japanese performance vehicles. Digital
+                    paint depth gauge audit and live ECU freeze-frame scan.
+                  </p>
+                  <ul className="space-y-2 text-xs text-[#000000] mb-6">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                      <span>Digital paint depth accident check</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#4A3AFF] shrink-0" />
+                      <span>Phone consultation with Master Tech</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="pt-4 border-t border-[#E5E7EB] flex justify-between items-center text-xs">
+                  <span className="font-mono text-[#AAADB0]">Comprehensive PDF</span>
+                  <a href="#booking" className="font-bold text-[#4A3AFF] hover:underline flex items-center gap-1">
+                    Book Service <ArrowRight className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* 7. EDITORIAL WORKSHOP STANDARDS (#standards) */}
-        <section
-          id="standards"
-          className="py-16 bg-[#000000] border-b border-[#4C4C4C]/30"
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              {/* Left Column: Master Diagnostic Technician Photo */}
-              <div className="lg:col-span-5">
-                <div className="relative rounded-[4px] border border-[#4C4C4C]/50 bg-[#000000] p-2 overflow-hidden shadow-lg group">
-                  <div className="relative aspect-[4/5] rounded-[4px] overflow-hidden bg-[#111111]">
-                    <Image
-                      src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1000&q=80"
-                      alt="Apex Precision Mechanical certified master diagnostic technician"
-                      width={600}
-                      height={750}
-                      unoptimized
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 transition-all duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-transparent to-transparent opacity-85" />
+        {/* 7. OUR NUMBERS / STATS (CarRepair X Style) */}
+        <section className="py-20 lg:py-24 bg-[#000000] text-white relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                Our Numbers
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+                Satisfied Customers Across Sydney
+              </h2>
+            </div>
 
-                    <div className="absolute bottom-4 left-4 right-4 bg-[#000000]/85 backdrop-blur p-4 rounded-[4px] border border-[#4C4C4C]/60 space-y-2">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-white">
-                          Master Mechanical Guarantee
-                        </span>
-                        <span className="text-[#B3F076] font-mono text-[10px]">
-                          CERTIFIED LEVEL 4
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-[#888888] leading-relaxed">
-                        24-Month / 30,000 km Workmanship Warranty backed across all mechanical,
-                        electronic, and driveline overhauls.
-                      </p>
-                    </div>
-                  </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-y md:divide-y-0 md:divide-x divide-white/15">
+              <div className="pt-4 md:pt-0">
+                <div className="text-4xl sm:text-6xl font-black text-white tracking-tight">
+                  18<span className="text-[#4A3AFF]">+</span>
+                </div>
+                <div className="text-xs sm:text-sm text-[#AAADB0] mt-2 font-medium">
+                  Years of European Specialization
                 </div>
               </div>
 
-              {/* Right Column: 3 Core Engineering Principles */}
-              <div className="lg:col-span-7 space-y-8">
+              <div className="pt-4 md:pt-0">
+                <div className="text-4xl sm:text-6xl font-black text-white tracking-tight">
+                  50<span className="text-[#4A3AFF]">k</span>
+                </div>
+                <div className="text-xs sm:text-sm text-[#AAADB0] mt-2 font-medium">
+                  Precision Services Completed
+                </div>
+              </div>
+
+              <div className="pt-4 md:pt-0">
+                <div className="text-4xl sm:text-6xl font-black text-white tracking-tight">
+                  99<span className="text-[#4A3AFF]">%</span>
+                </div>
+                <div className="text-xs sm:text-sm text-[#AAADB0] mt-2 font-medium">
+                  Customer Satisfaction Rate
+                </div>
+              </div>
+
+              <div className="pt-4 md:pt-0">
+                <div className="text-4xl sm:text-6xl font-black text-white tracking-tight flex items-center justify-center gap-1.5">
+                  4.9 <Star className="w-8 h-8 fill-[#4A3AFF] text-[#4A3AFF]" />
+                </div>
+                <div className="text-xs sm:text-sm text-[#AAADB0] mt-2 font-medium">
+                  Verified Google Reviews
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 8. WORKSHOP PROCESS (4-STEP WORKFLOW) */}
+        <section id="process" className="py-20 lg:py-28 bg-[#FFFFFF] border-b border-[#E5E7EB]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                The Process
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-4">
+                Our 4-Step Workshop Process
+              </h2>
+              <p className="text-sm sm:text-base text-[#4F4F4F] leading-relaxed">
+                Clear, transparent communication from key drop to handover.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Step 1 */}
+              <div className="p-6 rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] relative">
+                <div className="w-10 h-10 rounded-full bg-[#4A3AFF] text-white font-mono font-bold text-sm flex items-center justify-center mb-4 shadow-sm">
+                  01
+                </div>
+                <h3 className="text-base font-bold text-[#000000] mb-2">Diagnostic Check-in</h3>
+                <p className="text-xs text-[#4F4F4F] leading-relaxed">
+                  Vehicle received at 7:30 AM drop-off or via 24/7 key safe. Initial computer bus scan
+                  performed and physical walkaround logged.
+                </p>
+              </div>
+
+              {/* Step 2 */}
+              <div className="p-6 rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] relative">
+                <div className="w-10 h-10 rounded-full bg-[#4A3AFF] text-white font-mono font-bold text-sm flex items-center justify-center mb-4 shadow-sm">
+                  02
+                </div>
+                <h3 className="text-base font-bold text-[#000000] mb-2">Direct Photo Quotation</h3>
+                <p className="text-xs text-[#4F4F4F] leading-relaxed">
+                  You receive an SMS/email report with high-res photos showing wear levels (pad thickness,
+                  bushing splits, fluid condition) with transparent quotes.
+                </p>
+              </div>
+
+              {/* Step 3 */}
+              <div className="p-6 rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] relative">
+                <div className="w-10 h-10 rounded-full bg-[#4A3AFF] text-white font-mono font-bold text-sm flex items-center justify-center mb-4 shadow-sm">
+                  03
+                </div>
+                <h3 className="text-base font-bold text-[#000000] mb-2">Precision Execution</h3>
+                <p className="text-xs text-[#4F4F4F] leading-relaxed">
+                  Certified Master Technicians install genuine OEM parts torqued to factory specifications.
+                  Zero shortcuts or unauthorized aftermarket substitutions.
+                </p>
+              </div>
+
+              {/* Step 4 */}
+              <div className="p-6 rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] relative">
+                <div className="w-10 h-10 rounded-full bg-[#4A3AFF] text-white font-mono font-bold text-sm flex items-center justify-center mb-4 shadow-sm">
+                  04
+                </div>
+                <h3 className="text-base font-bold text-[#000000] mb-2">Handover &amp; Warranty</h3>
+                <p className="text-xs text-[#4F4F4F] leading-relaxed">
+                  Digital logbooks stamped, service reminder resets executed, complimentary wash completed,
+                  and 24-month/20,000km warranty issued.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 9. PACKAGES SECTION */}
+        <section id="packages" className="py-20 lg:py-28 bg-[#F8F9FC] border-b border-[#E5E7EB]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                Packages
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-4">
+                Packages for all types of cars
+              </h2>
+              <p className="text-sm sm:text-base text-[#4F4F4F] leading-relaxed">
+                Clear, transparent pricing tiers with 100% manufacturer warranty compliance.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Starter Package */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] p-8 shadow-sm flex flex-col justify-between">
                 <div>
-                  <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#0082FF] uppercase tracking-wider mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Integrity & Verification Framework</span>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-2">
+                    Interim Care
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-semibold text-[#FFFFFF]">
-                    Editorial Workshop Standards
-                  </h2>
-                  <p className="text-sm text-[#EDEDED] mt-2">
-                    We eliminate the opacity of conventional dealership servicing. Every diagnostic
-                    hypothesis is backed by real-time sensor waveform captures and transparent digital proof.
+                  <h3 className="text-2xl font-black text-[#000000] mb-2">Starter Logbook</h3>
+                  <div className="text-3xl font-black text-[#000000] mb-4">
+                    $280 – $380 <span className="text-xs font-normal text-[#4F4F4F]">inc. GST</span>
+                  </div>
+                  <p className="text-xs text-[#4F4F4F] mb-6">
+                    Essential manufacturer scheduled interval maintenance for smooth daily driving.
+                  </p>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#000000] mb-3">
+                    What is included:
+                  </div>
+                  <ul className="space-y-2.5 text-xs text-[#4F4F4F]">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>OEM synthetic engine oil replacement</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Mann / Mahle genuine oil filter</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>62-point digital safety inspection</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>OBD-II computer fault code scan</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Digital logbook stamp</span>
+                    </li>
+                  </ul>
+                </div>
+                <a
+                  href="#booking"
+                  className="mt-8 w-full py-3.5 rounded-full bg-[#F8F9FC] hover:bg-[#E5E7EB] border border-[#E5E7EB] text-[#000000] text-xs font-bold text-center transition-colors"
+                >
+                  Book Starter Package
+                </a>
+              </div>
+
+              {/* Complete Major Package (Featured) */}
+              <div className="rounded-2xl bg-white border-2 border-[#4A3AFF] p-8 shadow-xl shadow-[#4A3AFF]/10 flex flex-col justify-between relative transform lg:-translate-y-2">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-[#4A3AFF] text-white text-xs font-bold tracking-wide uppercase shadow">
+                  Most Popular
+                </div>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#4A3AFF] mb-2 mt-1">
+                    Full Scheduled Care
+                  </div>
+                  <h3 className="text-2xl font-black text-[#000000] mb-2">Comprehensive Major</h3>
+                  <div className="text-3xl font-black text-[#000000] mb-4">
+                    $580 – $780 <span className="text-xs font-normal text-[#4F4F4F]">inc. GST</span>
+                  </div>
+                  <p className="text-xs text-[#4F4F4F] mb-6">
+                    Full factory major servicing covering fluids, spark plugs, filters and brake hydraulics.
+                  </p>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#000000] mb-3">
+                    What is included:
+                  </div>
+                  <ul className="space-y-2.5 text-xs text-[#000000]">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>All Starter inclusions</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Engine air &amp; cabin pollen microfilter</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Spark plug renewal or diesel fuel filter</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Brake fluid hygroscopic boil test &amp; flush</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Suspension torque audit &amp; tyre rotation</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Complimentary courtesy loan vehicle</span>
+                    </li>
+                  </ul>
+                </div>
+                <a
+                  href="#booking"
+                  className="mt-8 w-full py-3.5 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white text-xs font-bold text-center shadow-md transition-all"
+                >
+                  Book Comprehensive Major
+                </a>
+              </div>
+
+              {/* Performance / Track Care */}
+              <div className="rounded-2xl bg-white border border-[#E5E7EB] p-8 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-2">
+                    High Performance
+                  </div>
+                  <h3 className="text-2xl font-black text-[#000000] mb-2">M &amp; AMG Performance</h3>
+                  <div className="text-3xl font-black text-[#000000] mb-4">
+                    Custom Quote <span className="text-xs font-normal text-[#4F4F4F]">tailored</span>
+                  </div>
+                  <p className="text-xs text-[#4F4F4F] mb-6">
+                    Dedicated maintenance for BMW M, Mercedes-AMG, Audi RS, and Porsche GT platforms.
+                  </p>
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#000000] mb-3">
+                    What is included:
+                  </div>
+                  <ul className="space-y-2.5 text-xs text-[#4F4F4F]">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Dedicated motorsport-grade fluids (Motul 300V)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Brembo / AP Racing brake fluid flush</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>Hunter 3D laser alignment calibration</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>ZF 8-speed / DCT transmission analysis</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-[#4A3AFF] shrink-0" />
+                      <span>High-resolution telemetry report</span>
+                    </li>
+                  </ul>
+                </div>
+                <a
+                  href="#booking"
+                  className="mt-8 w-full py-3.5 rounded-full bg-[#F8F9FC] hover:bg-[#E5E7EB] border border-[#E5E7EB] text-[#000000] text-xs font-bold text-center transition-colors"
+                >
+                  Consult Master Technician
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 10. TESTIMONIALS SECTION */}
+        <section className="py-20 lg:py-28 bg-[#FFFFFF] border-b border-[#E5E7EB]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                Testimonials
+              </div>
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-4">
+                What our clients say about us
+              </h2>
+              <p className="text-sm sm:text-base text-[#4F4F4F] leading-relaxed">
+                Independent excellence praised by Sydney European and performance Japanese drivers.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Testimonial 1 */}
+              <div className="rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] p-7 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-[#4A3AFF] text-[#4A3AFF]" />
+                    ))}
+                  </div>
+                  <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed italic mb-6">
+                    "BMW Sydney quoted me $1,480 for a major service and wanted another $600 for
+                    transmission fluids. Apex completed the entire factory logbook, stamped the digital
+                    iDrive service history, and gave me a courtesy loan car. Flawless honesty."
                   </p>
                 </div>
-
-                <div className="space-y-6">
-                  {/* Principle 01 */}
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-5 bg-[#000000] hover:border-[#0082FF] transition-colors duration-150">
-                    <div className="flex items-start gap-3">
-                      <span className="text-xs font-mono font-bold text-[#0082FF] bg-[#0057CB]/10 px-2 py-1 rounded-[4px] border border-[#0057CB]/30">
-                        01
-                      </span>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-[#FFFFFF]">
-                          Pre-Execution Digital Quotation
-                        </h3>
-                        <p className="text-xs text-[#EDEDED] leading-relaxed">
-                          High-definition video and photo evidence sent directly via SMS before any
-                          fastener is turned. You receive the micrometer rotor reading, fluid contamination
-                          color test, and itemized part costs prior to authorization.
-                        </p>
-                      </div>
-                    </div>
+                <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#000000]">Julian Thornton</div>
+                    <div className="text-[11px] text-[#4F4F4F]">Paddington, NSW</div>
                   </div>
+                  <div className="text-xs font-mono font-bold text-[#4A3AFF]">2022 BMW M340i</div>
+                </div>
+              </div>
 
-                  {/* Principle 02 */}
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-5 bg-[#000000] hover:border-[#0082FF] transition-colors duration-150">
-                    <div className="flex items-start gap-3">
-                      <span className="text-xs font-mono font-bold text-[#B3F076] bg-[#B3F076]/10 px-2 py-1 rounded-[4px] border border-[#B3F076]/30">
-                        02
-                      </span>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-[#FFFFFF]">
-                          Master Technicians Only
-                        </h3>
-                        <p className="text-xs text-[#EDEDED] leading-relaxed">
-                          No first-year apprentices wrenching unsupervised on client vehicles. Every
-                          chassis is inspected, torqued, and calibrated by factory-trained specialists with
-                          a minimum of 10 years European and Japanese performance experience.
-                        </p>
-                      </div>
-                    </div>
+              {/* Testimonial 2 */}
+              <div className="rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] p-7 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-[#4A3AFF] text-[#4A3AFF]" />
+                    ))}
                   </div>
+                  <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed italic mb-6">
+                    "Finding an independent mechanic in Sydney who actually understands Haldex AWD pumps
+                    and Audi S-Tronic transmissions is rare. They sent high-resolution video proof of pad
+                    thickness before commencing any work. Highly recommended."
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#000000]">Marcus Vance</div>
+                    <div className="text-[11px] text-[#4F4F4F]">Surry Hills, NSW</div>
+                  </div>
+                  <div className="text-xs font-mono font-bold text-[#4A3AFF]">2021 Audi RS3</div>
+                </div>
+              </div>
 
-                  {/* Principle 03 */}
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-5 bg-[#000000] hover:border-[#0082FF] transition-colors duration-150">
-                    <div className="flex items-start gap-3">
-                      <span className="text-xs font-mono font-bold text-[#8DD9E7] bg-[#8DD9E7]/10 px-2 py-1 rounded-[4px] border border-[#8DD9E7]/30">
-                        03
-                      </span>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-semibold text-[#FFFFFF]">
-                          Digital Factory Service Stamping
-                        </h3>
-                        <p className="text-xs text-[#EDEDED] leading-relaxed">
-                          Direct portal records uploaded seamlessly to BMW KaSIO, Volkswagen GeKo, and
-                          Mercedes-Benz DSB (Digital Service Booklet). Complete digital provenance is
-                          preserved, maximizing private resale valuation and warranty audit compliance.
-                        </p>
-                      </div>
-                    </div>
+              {/* Testimonial 3 */}
+              <div className="rounded-2xl bg-[#F8F9FC] border border-[#E5E7EB] p-7 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-1 mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-[#4A3AFF] text-[#4A3AFF]" />
+                    ))}
                   </div>
+                  <p className="text-xs sm:text-sm text-[#4F4F4F] leading-relaxed italic mb-6">
+                    "Maintained my statutory factory new car warranty at almost half the dealer cost. The
+                    loan car made my commute into the CBD seamless. Car was returned immaculate with an
+                    engine bay wipe-down. Apex is now our permanent workshop."
+                  </p>
+                </div>
+                <div className="pt-4 border-t border-[#E5E7EB] flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#000000]">Elena Ross</div>
+                    <div className="text-[11px] text-[#4F4F4F]">Alexandria, NSW</div>
+                  </div>
+                  <div className="text-xs font-mono font-bold text-[#4A3AFF]">2023 Lexus IS350</div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 8. INTERACTIVE CUSTOMER BOOKING INTAKE (#booking) */}
-        <section
-          id="booking"
-          className="py-16 bg-[#000000] border-b border-[#4C4C4C]/30"
-        >
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8 text-center sm:text-left">
-              <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#0082FF] uppercase tracking-wider mb-2">
-                <Calendar className="w-3.5 h-3.5" />
-                <span>Diagnostic Bay Intake Registry</span>
+        {/* 11. INTERACTIVE APPOINTMENT FORM */}
+        <section id="booking" className="py-20 lg:py-28 bg-[#F8F9FC] border-b border-[#E5E7EB]">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                Schedule an Appointment
               </div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-[#FFFFFF]">
-                Interactive Customer Booking Intake
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-4">
+                Book your car service online
               </h2>
-              <p className="text-sm text-[#EDEDED] mt-2">
-                Reserve your dedicated service bay. Same-day drop-off available between 7:30 AM and 9:00 AM,
-                or utilize our 24/7 key deposit locker box.
+              <p className="text-sm sm:text-base text-[#4F4F4F] leading-relaxed">
+                Fast confirmation with certified Master Technicians. Free courtesy loan car upon request.
               </p>
             </div>
 
-            {/* Diagnostic Form Card */}
-            <div className="rounded-[4px] bg-[#000000] border border-[#4C4C4C]/50 p-6 sm:p-8 shadow-lg">
-              {bookingSuccess ? (
-                /* Confirmed Reservation Voucher */
-                <div className="space-y-6 animate-fadeIn">
-                  <div className="border border-[#B3F076]/40 bg-[#B3F076]/5 rounded-[4px] p-6 text-center space-y-3">
-                    <div className="w-12 h-12 rounded-full bg-[#B3F076]/20 text-[#B3F076] flex items-center justify-center mx-auto">
-                      <Check className="w-6 h-6" />
-                    </div>
-                    <span className="text-xs font-mono text-[#B3F076] tracking-wider uppercase block">
-                      Workshop Reservation Confirmed
+            {bookingConfirmation ? (
+              /* Success Confirmation Card */
+              <div className="max-w-2xl mx-auto rounded-2xl bg-white border-2 border-[#10B981] p-8 sm:p-10 shadow-xl text-center">
+                <div className="w-16 h-16 rounded-full bg-[#10B981]/15 text-[#10B981] flex items-center justify-center mx-auto mb-6">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+                <span className="px-3 py-1 rounded-full bg-[#10B981]/10 text-[#10B981] text-xs font-mono font-bold uppercase tracking-wider">
+                  Appointment Confirmed
+                </span>
+                <h3 className="text-2xl font-black text-[#000000] mt-4 mb-2">
+                  Thank You, {bookingConfirmation.name}!
+                </h3>
+                <p className="text-xs sm:text-sm text-[#4F4F4F] max-w-md mx-auto mb-6">
+                  Your workshop slot is confirmed. An SMS check-in notice has been scheduled for your drop-off morning.
+                </p>
+
+                <div className="p-5 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-left mb-6 space-y-2.5 text-xs">
+                  <div className="flex justify-between items-center pb-2.5 border-b border-[#E5E7EB]">
+                    <span className="text-[#4F4F4F] uppercase font-bold">Reference Code</span>
+                    <span className="font-mono font-bold text-[#4A3AFF] text-sm">
+                      {bookingConfirmation.reference}
                     </span>
-                    <h3 className="text-xl font-bold text-white">
-                      Reservation Voucher {bookingSuccess.referenceId}
-                    </h3>
-                    <p className="text-xs text-[#EDEDED] max-w-md mx-auto">
-                      Thank you, {bookingSuccess.name}. Your dedicated service bay at our Alexandria
-                      facility has been provisioned. A confirmation dispatch SMS has been routed to{" "}
-                      <span className="font-mono text-white">{bookingSuccess.phone}</span>.
-                    </p>
                   </div>
-
-                  {/* Voucher Summary Table */}
-                  <div className="border border-[#4C4C4C]/40 rounded-[4px] p-4 bg-[#000000] space-y-3 text-xs">
-                    <div className="flex justify-between py-1 border-b border-[#4C4C4C]/30">
-                      <span className="text-[#888888]">Vehicle / Rego:</span>
-                      <span className="text-white font-medium">
-                        {bookingSuccess.vehicle}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#4C4C4C]/30">
-                      <span className="text-[#888888]">Selected Discipline:</span>
-                      <span className="text-[#8DD9E7] font-medium">
-                        {SERVICE_SCOPES.find((s) => s.id === bookingSuccess.serviceId)?.name ||
-                          bookingSuccess.serviceId}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#4C4C4C]/30">
-                      <span className="text-[#888888]">Drop-Off Schedule:</span>
-                      <span className="text-white font-mono">
-                        {bookingSuccess.date} (7:30 AM – 9:00 AM)
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1 border-b border-[#4C4C4C]/30">
-                      <span className="text-[#888888]">Loan Vehicle Allocation:</span>
-                      <span className="text-white">
-                        {bookingSuccess.courtesyCar
-                          ? "Yes · Complimentary Loaner Provisioned"
-                          : "No · Customer Arranging Transport"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between py-1">
-                      <span className="text-[#888888]">Key Drop Protocol:</span>
-                      <span className="text-[#B3F076] font-mono">
-                        Safe Box #04 PIN Sent via SMS
-                      </span>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#4F4F4F]">Vehicle:</span>
+                    <span className="text-[#000000] font-bold">{bookingConfirmation.vehicle}</span>
                   </div>
-
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-4 justify-between items-center pt-2">
-                    <a
-                      href="tel:0289013400"
-                      className="text-xs text-[#0082FF] hover:underline flex items-center gap-1.5"
-                    >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>Speak with Workshop Manager (02) 8901 3400</span>
-                    </a>
-                    <button
-                      type="button"
-                      onClick={handleResetBooking}
-                      className="bg-[#4C4C4C]/30 hover:bg-[#4C4C4C]/50 text-white px-4 py-2 rounded-full text-xs font-semibold transition-colors"
-                    >
-                      Reserve Another Vehicle
-                    </button>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#4F4F4F]">Service:</span>
+                    <span className="text-[#000000] font-bold text-right max-w-[240px] truncate">
+                      {bookingConfirmation.service}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#4F4F4F]">Date:</span>
+                    <span className="text-[#10B981] font-bold">{bookingConfirmation.date}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#4F4F4F]">Loan Car:</span>
+                    <span className="text-[#000000] font-bold">
+                      {bookingConfirmation.loanCar ? "Yes (Reserved)" : "No"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-[#E5E7EB]">
+                    <span className="text-[#4F4F4F]">Workshop:</span>
+                    <span className="text-[#000000]">42 Collins St, Alexandria NSW</span>
                   </div>
                 </div>
-              ) : (
-                /* Intake Form */
-                <form onSubmit={handleBookingSubmit} className="space-y-5">
+
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <a
+                    href="tel:0289013400"
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#F8F9FC] border border-[#E5E7EB] text-xs font-bold text-[#000000]"
+                  >
+                    <Phone className="w-4 h-4 text-[#4A3AFF]" />
+                    <span>Call Workshop: (02) 8901 3400</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleResetBooking}
+                    className="px-6 py-3 rounded-full bg-[#4A3AFF] text-white text-xs font-bold shadow"
+                  >
+                    Submit Another Appointment
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Booking Form */
+              <div className="max-w-3xl mx-auto rounded-2xl bg-white border border-[#E5E7EB] p-6 sm:p-10 shadow-lg">
+                <form onSubmit={handleBookingSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Full Name */}
-                    <div className="space-y-1.5">
+                    <div>
                       <label
-                        htmlFor="booking-name"
-                        className="text-xs font-medium text-[#EDEDED]"
+                        htmlFor="form-name"
+                        className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
                       >
-                        Full Name <span className="text-[#0082FF]">*</span>
+                        Full Name *
                       </label>
                       <input
-                        id="booking-name"
+                        id="form-name"
                         type="text"
+                        placeholder="e.g. John Smith"
                         required
-                        value={bookingName}
-                        onChange={(e) => setBookingName(e.target.value)}
-                        placeholder="e.g. Marcus Vance"
-                        className="w-full rounded-[4px] bg-[#000000] border border-[#4C4C4C] text-[#FFFFFF] px-4 py-2.5 text-sm focus:border-[#0082FF] focus:outline-none placeholder:text-[#888888]"
+                        value={bookName}
+                        onChange={(e) => setBookName(e.target.value)}
+                        className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
                       />
                     </div>
 
-                    {/* Contact Number */}
-                    <div className="space-y-1.5">
+                    <div>
                       <label
-                        htmlFor="booking-phone"
-                        className="text-xs font-medium text-[#EDEDED]"
+                        htmlFor="form-phone"
+                        className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
                       >
-                        Contact Mobile <span className="text-[#0082FF]">*</span>
+                        Phone Number *
                       </label>
                       <input
-                        id="booking-phone"
+                        id="form-phone"
                         type="tel"
+                        placeholder="e.g. 0412 345 678"
                         required
-                        value={bookingPhone}
-                        onChange={(e) => setBookingPhone(e.target.value)}
-                        placeholder="0400 000 000"
-                        className="w-full rounded-[4px] bg-[#000000] border border-[#4C4C4C] text-[#FFFFFF] px-4 py-2.5 text-sm focus:border-[#0082FF] focus:outline-none placeholder:text-[#888888]"
+                        value={bookPhone}
+                        onChange={(e) => setBookPhone(e.target.value)}
+                        className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Vehicle Make/Model/Rego */}
-                    <div className="space-y-1.5">
+                    <div>
                       <label
-                        htmlFor="booking-vehicle"
-                        className="text-xs font-medium text-[#EDEDED]"
+                        htmlFor="form-email"
+                        className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
                       >
-                        Rego / Make & Model
+                        Email Address
                       </label>
                       <input
-                        id="booking-vehicle"
-                        type="text"
-                        value={bookingVehicle}
-                        onChange={(e) => setBookingVehicle(e.target.value)}
-                        placeholder="e.g. 2021 BMW M340i / NSW #CK82AP"
-                        className="w-full rounded-[4px] bg-[#000000] border border-[#4C4C4C] text-[#FFFFFF] px-4 py-2.5 text-sm focus:border-[#0082FF] focus:outline-none placeholder:text-[#888888]"
+                        id="form-email"
+                        type="email"
+                        placeholder="e.g. client@example.com.au"
+                        value={bookEmail}
+                        onChange={(e) => setBookEmail(e.target.value)}
+                        className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
                       />
                     </div>
 
-                    {/* Service Scope Selection (auto-synced) */}
-                    <div className="space-y-1.5">
+                    <div>
                       <label
-                        htmlFor="booking-service"
-                        className="text-xs font-medium text-[#EDEDED]"
+                        htmlFor="form-vehicle"
+                        className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
                       >
-                        Service Discipline
+                        Vehicle Rego / Model *
+                      </label>
+                      <input
+                        id="form-vehicle"
+                        type="text"
+                        placeholder="e.g. APX-92K (2022 BMW M340i)"
+                        required
+                        value={bookVehicle}
+                        onChange={(e) => setBookVehicle(e.target.value)}
+                        className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label
+                        htmlFor="form-service"
+                        className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
+                      >
+                        Service Required *
                       </label>
                       <select
-                        id="booking-service"
-                        value={bookingService}
-                        onChange={(e) => setBookingService(e.target.value)}
-                        className="w-full rounded-[4px] bg-[#000000] border border-[#4C4C4C] text-[#FFFFFF] px-4 py-2.5 text-sm focus:border-[#0082FF] focus:outline-none"
+                        id="form-service"
+                        value={bookService}
+                        onChange={(e) => setBookService(e.target.value)}
+                        className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
                       >
-                        {SERVICE_SCOPES.map((s) => (
-                          <option key={s.id} value={s.id} className="bg-[#000000]">
-                            {s.name} ({s.turnaroundBadge})
-                          </option>
-                        ))}
+                        <option value="Logbook Servicing (Minor / Interim)">
+                          Logbook Servicing (Minor / Interim)
+                        </option>
+                        <option value="Comprehensive Logbook Service (Major)">
+                          Comprehensive Logbook Service (Major)
+                        </option>
+                        <option value="Performance Brake Pad & Rotor Overhaul">
+                          Performance Brake Pad & Rotor Overhaul
+                        </option>
+                        <option value="Computer Diagnostics & ECU Fault Isolation">
+                          Computer Diagnostics & ECU Fault Isolation
+                        </option>
+                        <option value="Driveline & DSG / ZF Transmission Service">
+                          Driveline & DSG / ZF Transmission Service
+                        </option>
+                        <option value="Master Pre-Purchase Inspection (120-Point)">
+                          Master Pre-Purchase Inspection (120-Point)
+                        </option>
+                        <option value="Suspension, Steering & 3D Alignment">
+                          Suspension, Steering & 3D Alignment
+                        </option>
                       </select>
                     </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Preferred Date */}
-                    <div className="space-y-1.5">
+                    <div>
                       <label
-                        htmlFor="booking-date"
-                        className="text-xs font-medium text-[#EDEDED]"
+                        htmlFor="form-date"
+                        className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
                       >
-                        Preferred Drop-Off Date
+                        Preferred Date *
                       </label>
                       <input
-                        id="booking-date"
+                        id="form-date"
                         type="date"
-                        value={bookingDate}
-                        onChange={(e) => setBookingDate(e.target.value)}
-                        className="w-full rounded-[4px] bg-[#000000] border border-[#4C4C4C] text-[#FFFFFF] px-4 py-2.5 text-sm focus:border-[#0082FF] focus:outline-none [color-scheme:dark]"
+                        required
+                        value={bookDate}
+                        onChange={(e) => setBookDate(e.target.value)}
+                        className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
                       />
-                    </div>
-
-                    {/* Courtesy Car Checkbox */}
-                    <div className="flex items-center gap-3 pt-6">
-                      <input
-                        id="booking-courtesy"
-                        type="checkbox"
-                        checked={courtesyCar}
-                        onChange={(e) => setCourtesyCar(e.target.checked)}
-                        className="w-4 h-4 rounded-[4px] accent-[#0057CB] bg-[#000000] border border-[#4C4C4C]"
-                      />
-                      <label
-                        htmlFor="booking-courtesy"
-                        className="text-xs text-[#EDEDED] cursor-pointer"
-                      >
-                        Request complimentary loan vehicle / Green Square station drop-off
-                      </label>
                     </div>
                   </div>
 
-                  {/* Notes & Symptoms */}
-                  <div className="space-y-1.5">
+                  <div>
+                    <label className="flex items-center gap-3 p-3.5 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] cursor-pointer hover:border-[#4A3AFF] transition-colors">
+                      <input
+                        type="checkbox"
+                        checked={loanCarNeeded}
+                        onChange={(e) => setLoanCarNeeded(e.target.checked)}
+                        className="w-4 h-4 rounded text-[#4A3AFF] focus:ring-[#4A3AFF]"
+                      />
+                      <span className="text-xs text-[#000000] font-bold flex items-center gap-1.5">
+                        <Key className="w-3.5 h-3.5 text-[#4A3AFF]" />
+                        Request Complimentary Courtesy Loan Car (Subject to availability)
+                      </span>
+                    </label>
+                  </div>
+
+                  <div>
                     <label
-                      htmlFor="booking-notes"
-                      className="text-xs font-medium text-[#EDEDED]"
+                      htmlFor="form-notes"
+                      className="block text-xs font-bold uppercase tracking-wider text-[#4F4F4F] mb-1.5"
                     >
-                      Symptom Notes & Specific Diagnostic Requests
+                      Notes / Symptoms / Specific Requests
                     </label>
                     <textarea
-                      id="booking-notes"
+                      id="form-notes"
                       rows={3}
-                      value={bookingNotes}
-                      onChange={(e) => setBookingNotes(e.target.value)}
-                      placeholder="e.g. Intermittent boost hesitation at 3,500 RPM, brake pedal vibration under heavy deceleration, or factory logbook stamping required."
-                      className="w-full rounded-[4px] bg-[#000000] border border-[#4C4C4C] text-[#FFFFFF] px-4 py-2.5 text-sm focus:border-[#0082FF] focus:outline-none placeholder:text-[#888888]"
+                      placeholder="e.g. Squeal under light braking, check tyre pressures, or specific drop-off details..."
+                      value={bookNotes}
+                      onChange={(e) => setBookNotes(e.target.value)}
+                      className="w-full bg-[#F8F9FC] border border-[#E5E7EB] focus:border-[#4A3AFF] focus:bg-white rounded-xl px-4 py-3 text-xs sm:text-sm text-[#000000]"
                     />
                   </div>
 
-                  {/* Submit CTA */}
                   <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <span className="text-xs text-[#4F4F4F] flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-[#10B981]" />
+                      Zero prepayment required · Pay upon completion
+                    </span>
+
                     <button
                       type="submit"
-                      className="w-full sm:w-auto bg-[#0057CB] hover:bg-[#0082FF] text-white rounded-full px-8 py-3 text-sm font-semibold transition-colors duration-150 inline-flex items-center justify-center gap-2 shadow-sm"
+                      disabled={isSubmitting}
+                      className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#4A3AFF] hover:bg-[#1557FF] text-white font-bold text-sm shadow-lg shadow-[#4A3AFF]/20 transition-all disabled:opacity-50"
                     >
-                      <span>Confirm Workshop Reservation</span>
-                      <ArrowRight className="w-4 h-4" />
+                      {isSubmitting ? "Submitting..." : "Schedule an appointment →"}
                     </button>
-                    <div className="text-[11px] text-[#888888] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#B3F076]" />
-                      <span>Instant SMS Dispatch · Zero Payment Required Upfront</span>
-                    </div>
                   </div>
                 </form>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </section>
 
-        {/* 9. WORKSHOP TELEMETRY & LOCATION HUB (#location) */}
-        <section
-          id="location"
-          className="py-16 bg-[#000000] border-b border-[#4C4C4C]/30"
-        >
+        {/* 12. WORKSHOP DETAILS & LOCATION */}
+        <section id="location" className="py-20 lg:py-28 bg-[#FFFFFF] border-b border-[#E5E7EB]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl mb-10">
-              <div className="inline-flex items-center gap-1.5 text-xs font-mono text-[#0082FF] uppercase tracking-wider mb-2">
-                <MapPin className="w-3.5 h-3.5" />
-                <span>Alexandria Technical Operations Facility</span>
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] text-xs font-bold uppercase tracking-wider mb-4">
+                Locations
               </div>
-              <h2 className="text-xl sm:text-2xl font-semibold text-[#FFFFFF]">
-                Workshop Telemetry & Location Hub
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#000000] tracking-tight mb-4">
+                We have a car workshop near you
               </h2>
-              <p className="text-sm text-[#EDEDED] mt-2">
-                Centrally positioned in Alexandria, Sydney, within 350 meters of Green Square Station
-                and seamless arterial access to the Eastern Suburbs and Sydney CBD.
+              <p className="text-sm sm:text-base text-[#4F4F4F] leading-relaxed">
+                Centrally located in Sydney's automotive precinct, 5 minutes from Green Square Station.
               </p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              {/* Operations Information Card */}
-              <div className="lg:col-span-6 space-y-4">
-                <div className="rounded-[4px] bg-[#000000] border border-[#4C4C4C]/40 p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[10px] font-mono text-[#888888] uppercase block">
-                        Alexandria Workshop HQ
-                      </span>
-                      <h3 className="text-base font-semibold text-white mt-0.5">
-                        42 Collins Street, Alexandria NSW 2015
-                      </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left Column: Location Card */}
+              <div className="lg:col-span-5 space-y-6">
+                <div className="rounded-2xl bg-white border border-[#E5E7EB] p-7 shadow-sm space-y-6">
+                  <h3 className="text-lg font-black text-[#000000] pb-3 border-b border-[#E5E7EB]">
+                    Alexandria Workshop HQ
+                  </h3>
+
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2.5 rounded-full bg-[#4A3AFF]/10 text-[#4A3AFF] shrink-0 mt-0.5">
+                      <MapPin className="w-5 h-5" />
                     </div>
-                    <a
-                      href="https://maps.google.com/?q=42+Collins+Street+Alexandria+NSW+2015"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-[#0082FF] hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Google Maps</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-wider text-[#4F4F4F]">
+                        Address
+                      </div>
+                      <div className="text-sm font-bold text-[#000000] mt-0.5">
+                        42 Collins Street, Alexandria NSW 2015
+                      </div>
+                      <div className="text-xs text-[#4F4F4F] mt-0.5">Sydney NSW Metropolitan Area</div>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-[#4C4C4C]/30 text-xs">
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2.5 rounded-full bg-[#10B981]/10 text-[#10B981] shrink-0 mt-0.5">
+                      <Phone className="w-5 h-5" />
+                    </div>
                     <div>
-                      <span className="text-[#888888] block text-[10px] uppercase font-mono">
-                        Direct Phone Hotline
-                      </span>
+                      <div className="text-xs font-bold uppercase tracking-wider text-[#4F4F4F]">
+                        Direct Line
+                      </div>
                       <a
                         href="tel:0289013400"
-                        className="text-white hover:text-[#0082FF] font-mono mt-0.5 block"
+                        className="text-lg font-black text-[#000000] hover:text-[#4A3AFF] transition-colors mt-0.5 block"
                       >
                         (02) 8901 3400
                       </a>
                     </div>
+                  </div>
+
+                  <div className="flex items-start gap-3.5">
+                    <div className="p-2.5 rounded-full bg-[#1557FF]/10 text-[#1557FF] shrink-0 mt-0.5">
+                      <Mail className="w-5 h-5" />
+                    </div>
                     <div>
-                      <span className="text-[#888888] block text-[10px] uppercase font-mono">
-                        Direct Service Email
-                      </span>
+                      <div className="text-xs font-bold uppercase tracking-wider text-[#4F4F4F]">
+                        Email Enquiries
+                      </div>
                       <a
                         href="mailto:service@mechanic.ithelpers.com.au"
-                        className="text-white hover:text-[#0082FF] font-mono mt-0.5 block truncate"
+                        className="text-xs sm:text-sm font-medium text-[#000000] hover:text-[#4A3AFF] transition-colors mt-0.5 block"
                       >
                         service@mechanic.ithelpers.com.au
                       </a>
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[#4C4C4C]/30 text-xs space-y-1.5">
-                    <span className="text-[#888888] block text-[10px] uppercase font-mono">
-                      Operating Hours (Sydney Time)
-                    </span>
-                    <div className="flex justify-between text-[#EDEDED]">
-                      <span>Monday – Friday:</span>
-                      <span className="font-mono text-white">7:30 AM – 5:30 PM</span>
-                    </div>
-                    <div className="flex justify-between text-[#EDEDED]">
-                      <span>Saturday:</span>
-                      <span className="font-mono text-white">8:00 AM – 1:00 PM (By Appt)</span>
-                    </div>
-                    <div className="flex justify-between text-[#888888]">
-                      <span>Sunday & Public Holidays:</span>
-                      <span className="font-mono">Closed</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 24/7 Key Safe & Transit Instructions */}
-                <div className="rounded-[4px] bg-[#000000] border border-[#4C4C4C]/40 p-5 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-semibold text-[#FFE372]">
-                    <Key className="w-4 h-4" />
-                    <span>24/7 After-Hours Drop-Box Safe</span>
-                  </div>
-                  <p className="text-xs text-[#EDEDED] leading-relaxed">
-                    Arriving before 7:30 AM or after 5:30 PM? Deposit your vehicle keys in our steel
-                    tamper-proof drop locker situated adjacent to Bay Door 02. Secure one-time SMS PIN
-                    is issued upon booking confirmation.
-                  </p>
-                  <div className="pt-2 border-t border-[#4C4C4C]/30 text-xs text-[#888888] flex items-center gap-2">
-                    <Clock className="w-3.5 h-3.5 text-[#8DD9E7]" />
-                    <span>5-minute walk (350m) to Green Square Station · Airport Line direct</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Transit & Interactive Directions Card */}
-              <div className="lg:col-span-6">
-                <div className="rounded-[4px] bg-[#000000] border border-[#4C4C4C]/40 p-6 space-y-5 h-full flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] font-mono text-[#888888] uppercase block">
-                      Facility Transit Directions
-                    </span>
-                    <h3 className="text-base font-semibold text-white mt-1">
-                      Rapid Transit & Customer Courtesy
-                    </h3>
-                    <p className="text-xs text-[#EDEDED] mt-2 leading-relaxed">
-                      Leave your vehicle with our technicians in the morning and take the 5-minute
-                      train ride into the Sydney CBD. Complimentary espresso lounge, high-speed Wi-Fi,
-                      and courtesy vehicles available upon prior reservation.
-                    </p>
-
-                    <div className="mt-5 space-y-2.5">
-                      <div className="flex items-center gap-2 text-xs text-[#EDEDED] p-2.5 bg-[#4C4C4C]/20 rounded-[4px] border border-[#4C4C4C]/30">
-                        <span className="w-2 h-2 rounded-full bg-[#B3F076]" />
-                        <span>Complimentary loan vehicles provisioned for major logbook services</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-[#EDEDED] p-2.5 bg-[#4C4C4C]/20 rounded-[4px] border border-[#4C4C4C]/30">
-                        <span className="w-2 h-2 rounded-full bg-[#8DD9E7]" />
-                        <span>Private customer lounge with dedicated workspaces</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-[#EDEDED] p-2.5 bg-[#4C4C4C]/20 rounded-[4px] border border-[#4C4C4C]/30">
-                        <span className="w-2 h-2 rounded-full bg-[#FFE372]" />
-                        <span>Same-day wash and vacuum with every major overhaul tier</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-[#4C4C4C]/30 flex flex-wrap gap-3 items-center justify-between">
+                  <div className="pt-3 border-t border-[#E5E7EB]">
                     <a
                       href="https://maps.google.com/?q=42+Collins+Street+Alexandria+NSW+2015"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-[#4C4C4C]/30 hover:bg-[#0057CB] text-white px-4 py-2 rounded-full text-xs font-semibold transition-colors duration-150 inline-flex items-center gap-1.5"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4A3AFF] hover:underline"
                     >
-                      <MapPin className="w-3.5 h-3.5" />
-                      <span>Launch Google Navigation</span>
-                    </a>
-                    <a
-                      href="tel:0289013400"
-                      className="text-xs font-mono text-[#EDEDED] hover:text-[#0082FF] transition-colors"
-                    >
-                      Workshop Desk: (02) 8901 3400
+                      <span>Open in Google Maps</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
                     </a>
                   </div>
+                </div>
+
+                {/* Operating Hours & Key Drop */}
+                <div className="rounded-2xl bg-white border border-[#E5E7EB] p-7 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#E5E7EB]">
+                    <h3 className="text-sm font-bold text-[#000000] flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#4A3AFF]" />
+                      Workshop Operating Hours
+                    </h3>
+                    <span className="text-[11px] font-mono font-bold text-[#10B981]">Open Mon–Sat</span>
+                  </div>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex justify-between items-center py-1 border-b border-[#E5E7EB]/60">
+                      <span className="text-[#000000] font-medium">Monday – Friday</span>
+                      <span className="font-mono text-[#000000] font-bold">7:30 AM – 5:30 PM</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1 border-b border-[#E5E7EB]/60">
+                      <span className="text-[#000000] font-medium">Saturday</span>
+                      <span className="font-mono text-[#000000] font-bold">8:00 AM – 1:00 PM</span>
+                    </div>
+                    <div className="flex justify-between items-center py-1">
+                      <span className="text-[#4F4F4F]">Sunday</span>
+                      <span className="font-mono text-[#4F4F4F]">Closed (Key Safe Open)</span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-xs text-[#4F4F4F] flex items-start gap-2.5">
+                    <KeyRound className="w-4 h-4 text-[#4A3AFF] shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-[#000000]">24/7 Secure Key Drop-Box Safe:</strong> Early drop-off before 7:30 AM or late pickups after 5:30 PM handled via secure encrypted wall safe.
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Amenities & Directions */}
+              <div className="lg:col-span-7 rounded-2xl bg-white border border-[#E5E7EB] p-7 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-4 border-b border-[#E5E7EB]">
+                  <div>
+                    <h3 className="text-base font-black text-[#000000]">
+                      Facility &amp; Transport Access
+                    </h3>
+                    <p className="text-xs text-[#4F4F4F]">
+                      Dedicated customer bays and easy railway transit
+                    </p>
+                  </div>
+                  <a
+                    href="https://maps.google.com/?q=42+Collins+Street+Alexandria+NSW+2015"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#4A3AFF] text-white text-xs font-bold hover:bg-[#1557FF] transition-colors w-fit"
+                  >
+                    <span>Get Directions</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-center">
+                    <Train className="w-5 h-5 text-[#4A3AFF] mx-auto mb-1.5" />
+                    <div className="text-xs font-bold text-[#000000]">Green Square</div>
+                    <div className="text-[10px] text-[#4F4F4F]">5 min walk</div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-center">
+                    <Car className="w-5 h-5 text-[#4A3AFF] mx-auto mb-1.5" />
+                    <div className="text-xs font-bold text-[#000000]">Loan Cars</div>
+                    <div className="text-[10px] text-[#4F4F4F]">Free on booking</div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-center">
+                    <Coffee className="w-5 h-5 text-[#4A3AFF] mx-auto mb-1.5" />
+                    <div className="text-xs font-bold text-[#000000]">Customer Lounge</div>
+                    <div className="text-[10px] text-[#4F4F4F]">Espresso bar</div>
+                  </div>
+                  <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-center">
+                    <Wifi className="w-5 h-5 text-[#4A3AFF] mx-auto mb-1.5" />
+                    <div className="text-xs font-bold text-[#000000]">High-Speed Wi-Fi</div>
+                    <div className="text-[10px] text-[#4F4F4F]">Quiet work desks</div>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#F8F9FC] border border-[#E5E7EB] text-xs text-[#4F4F4F] leading-relaxed">
+                  <strong className="text-[#000000]">Parking &amp; Low-Clearance Access:</strong> Dedicated on-site customer bays. Engineered with flat approach ramps suitable for performance and lowered sports cars (BMW M, Porsche GT, Audi RS, Type R).
                 </div>
               </div>
             </div>
@@ -1571,112 +1872,169 @@ export default function ApexMechanicalPage() {
         </section>
       </main>
 
-      {/* FOOTER */}
-      <footer className="bg-[#000000] border-t border-[#4C4C4C]/40 py-12 text-xs text-[#888888]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Col 1 */}
-            <div className="space-y-3 md:col-span-2">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-[4px] bg-[#0057CB] flex items-center justify-center text-white font-bold text-xs">
-                  AP
+      {/* 13. FOOTER */}
+      <footer className="bg-[#000000] text-white pb-24 md:pb-12 pt-16 border-t border-[#E5E7EB]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-white/15">
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-[#4A3AFF] text-white">
+                  <Gauge className="w-5 h-5" />
                 </div>
-                <span className="font-semibold text-sm text-[#FFFFFF] tracking-wider">
-                  APEX PRECISION MECHANICAL
-                </span>
+                <div className="flex flex-col">
+                  <span className="font-black text-lg tracking-tight text-white">
+                    APEX <span className="text-[#4A3AFF]">PRECISION</span>
+                  </span>
+                  <span className="text-[10px] tracking-wider uppercase text-[#AAADB0]">
+                    European &amp; Japanese Auto Specialists · Sydney
+                  </span>
+                </div>
               </div>
-              <p className="text-xs text-[#EDEDED] max-w-md leading-relaxed">
-                Independent automotive engineering specialist for European, Japanese, and performance
-                platforms. Statutory logbook servicing, CAN-Bus diagnostic telemetry, and performance brake
-                calibrations under Australian Consumer Law compliance.
+
+              <p className="text-xs text-[#AAADB0] max-w-sm leading-relaxed">
+                Dealer-grade diagnostics, statutory logbook servicing, and mechanical repairs in Alexandria,
+                Sydney NSW. Preserving new car warranties with certified master technicians.
               </p>
-              <div className="text-[11px] font-mono text-[#888888]">
-                NSW MOTOR DEALER & REPAIRER LICENCE: #MVRL58291
+
+              <div className="flex items-center gap-2 text-xs text-[#10B981] font-semibold">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Australian Consumer Law (ACL) Statutory Warranty Protection</span>
               </div>
             </div>
 
-            {/* Col 2 */}
-            <div className="space-y-2">
-              <span className="text-xs font-mono uppercase text-[#FFFFFF] block">
-                Technical Disciplines
-              </span>
-              <ul className="space-y-1.5 text-xs text-[#EDEDED]">
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                Navigation
+              </h4>
+              <ul className="space-y-2 text-xs text-[#AAADB0]">
                 <li>
-                  <a href="#services" className="hover:text-[#0082FF]">
-                    Manufacturer Logbook Servicing
+                  <a href="#services" className="hover:text-white transition-colors">
+                    Services
                   </a>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-[#0082FF]">
-                    CAN-Bus Deep Diagnostics
+                  <a href="#why-us" className="hover:text-white transition-colors">
+                    Why Us
                   </a>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-[#0082FF]">
-                    Performance Brake Systems
+                  <a href="#estimator" className="hover:text-white transition-colors">
+                    Estimator
                   </a>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-[#0082FF]">
-                    ZF & DSG Driveline Flush
+                  <a href="#process" className="hover:text-white transition-colors">
+                    Our Process
                   </a>
                 </li>
                 <li>
-                  <a href="#services" className="hover:text-[#0082FF]">
-                    120-Point Pre-Purchase Audits
+                  <a href="#packages" className="hover:text-white transition-colors">
+                    Packages
+                  </a>
+                </li>
+                <li>
+                  <a href="#location" className="hover:text-white transition-colors">
+                    Locations
                   </a>
                 </li>
               </ul>
             </div>
 
-            {/* Col 3 */}
-            <div className="space-y-2">
-              <span className="text-xs font-mono uppercase text-[#FFFFFF] block">
-                Agency Portfolio
-              </span>
-              <p className="text-xs text-[#EDEDED] leading-relaxed">
-                Demonstration prototype developed strictly for commercial portfolio showcase.
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                Marques
+              </h4>
+              <ul className="space-y-1.5 text-xs text-[#AAADB0]">
+                <li>BMW &amp; M Power</li>
+                <li>Mercedes-Benz &amp; AMG</li>
+                <li>Audi &amp; RS Quattro</li>
+                <li>Porsche 911 / Macan</li>
+                <li>Volkswagen R / GTI</li>
+                <li>Lexus F-Sport &amp; Toyota GR</li>
+                <li>Subaru STI &amp; Honda Type R</li>
+              </ul>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">
+                Contact
+              </h4>
+              <div className="space-y-2 text-xs text-[#AAADB0]">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-[#4A3AFF]" />
+                  <a href="tel:0289013400" className="hover:text-white font-bold text-white">
+                    (02) 8901 3400
+                  </a>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-3.5 h-3.5 text-[#1557FF]" />
+                  <a href="mailto:service@mechanic.ithelpers.com.au" className="hover:text-white">
+                    service@mechanic.ithelpers.com.au
+                  </a>
+                </div>
+                <div className="flex items-start gap-2 pt-1">
+                  <MapPin className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" />
+                  <span>42 Collins St, Alexandria NSW 2015</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-center md:text-left text-[#AAADB0]">
+            <div className="space-y-1">
+              <p>© {new Date().getFullYear()} Apex Precision Mechanical. All rights reserved.</p>
+              <p className="text-[11px] text-[#AAADB0]/70">
+                AGENCY PORTFOLIO DEMONSTRATION | High-Conversion Commercial Prototype engineered by{" "}
+                <a
+                  href="https://ithelpers.com.au"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#4A3AFF] hover:underline font-semibold"
+                >
+                  I.T Helpers
+                </a>
+                .
               </p>
+            </div>
+
+            <div className="flex items-center gap-4">
               <a
                 href="https://ithelpers.com.au"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-[#0082FF] hover:text-[#FFFFFF] transition-colors duration-150 pt-1"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white/10 text-xs font-bold text-white hover:bg-white/20 transition-colors"
               >
                 <span>Agency: I.T Helpers</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="w-3.5 h-3.5 text-[#4A3AFF]" />
               </a>
-            </div>
-          </div>
-
-          <div className="pt-6 border-t border-[#4C4C4C]/30 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
-            <div>
-              © 2026 Apex Precision Mechanical. All rights reserved.
-            </div>
-            <div className="text-[#888888]">
-              High-Conversion Commercial Showcase · Synthesized Webflow Architecture
             </div>
           </div>
         </div>
       </footer>
 
-      {/* 10. STICKY MOBILE BAR (<768px) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#000000]/95 backdrop-blur-md border-t border-[#4C4C4C]/40 p-3 flex items-center gap-3">
-        <a
-          href="tel:0289013400"
-          className="flex-1 bg-[#4C4C4C]/30 hover:bg-[#4C4C4C]/50 text-white rounded-full py-2.5 text-xs font-semibold text-center border border-[#4C4C4C]/50 flex items-center justify-center gap-1.5"
-        >
-          <Phone className="w-3.5 h-3.5 text-[#0082FF]" />
-          <span>Call Workshop</span>
-        </a>
-        <a
-          href="#booking"
-          className="flex-1 bg-[#0057CB] hover:bg-[#0082FF] text-white rounded-full py-2.5 text-xs font-semibold text-center flex items-center justify-center gap-1.5 shadow-sm"
-        >
-          <span>Reserve Bay</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </a>
-      </div>
+      {/* 14. MOBILE STICKY BAR (<768px, CarRepair X Style) */}
+      <aside
+        aria-label="Mobile Quick Actions"
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] p-3 px-4 shadow-lg"
+      >
+        <div className="grid grid-cols-2 gap-3 max-w-md mx-auto">
+          <a
+            href="tel:0289013400"
+            className="flex items-center justify-center gap-2 py-3 px-3 rounded-full bg-[#F8F9FC] border border-[#E5E7EB] text-[#000000] text-xs font-bold active:bg-[#E5E7EB]"
+          >
+            <Phone className="w-4 h-4 text-[#4A3AFF]" />
+            <span>Call Workshop</span>
+          </a>
+
+          <a
+            href="#booking"
+            className="flex items-center justify-center gap-2 py-3 px-3 rounded-full bg-[#4A3AFF] text-white text-xs font-bold shadow-md shadow-[#4A3AFF]/20 active:bg-[#1557FF]"
+          >
+            <Calendar className="w-4 h-4" />
+            <span>Book Online</span>
+          </a>
+        </div>
+      </aside>
     </div>
   );
 }
