@@ -1982,7 +1982,7 @@ export default function Page() {
 
           <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-center md:text-left text-[#AAADB0]">
             <div className="space-y-1">
-              <p>© {new Date().getFullYear()} Apex Precision Mechanical. All rights reserved.</p>
+              <p>© {2026} Apex Precision Mechanical. All rights reserved.</p>
               <p className="text-[11px] text-[#AAADB0]/70">
                 AGENCY PORTFOLIO DEMONSTRATION | High-Conversion Commercial Prototype engineered by{" "}
                 <a
