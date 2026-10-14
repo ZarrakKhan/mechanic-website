@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Check,
   ChevronDown,
-  ChevronUp,
   Menu,
   X,
   Shield,
@@ -229,22 +228,67 @@ const DISCIPLINES: Discipline[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SMOOTH TICKER / ANIMATED NUMBER HOOK
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AnimatedNumber({
+  value,
+  prefix = "",
+  suffix = "",
+}: {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+}) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const prevValueRef = useRef(value);
+
+  useEffect(() => {
+    const start = prevValueRef.current;
+    const end = value;
+    prevValueRef.current = value;
+    if (start === end) return;
+
+    const duration = 280;
+    const startTime = performance.now();
+
+    let animationFrameId: number;
+    const step = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      // easeOutCubic
+      const ease = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(start + (end - start) * ease);
+      setDisplayValue(current);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(step);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [value]);
+
+  return (
+    <span>
+      {prefix}
+      {displayValue.toLocaleString()}
+      {suffix}
+    </span>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // MAIN PAGE COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function Page() {
-  // Navigation
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
-  // Cost estimator
   const [platform, setPlatform] = useState<VehiclePlatform>("vag");
   const [selectedScopeId, setSelectedScopeId] = useState("minor");
-
-  // Disciplines accordion
   const [expandedDiscipline, setExpandedDiscipline] = useState<string>("01");
-
-  // Booking form
   const [bookName, setBookName] = useState("");
   const [bookPhone, setBookPhone] = useState("");
   const [bookRego, setBookRego] = useState("");
@@ -263,15 +307,12 @@ export default function Page() {
     loanCar: boolean;
   } | null>(null);
 
-  const estimatorRef = useRef<HTMLElement>(null);
-
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 24);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Pricing calculation
   const currentScope = useMemo(
     () => SERVICE_SCOPES.find((s) => s.id === selectedScopeId) ?? SERVICE_SCOPES[0],
     [selectedScopeId]
@@ -288,7 +329,6 @@ export default function Page() {
     const dealer = Math.round(midApex * currentScope.dealerMultiplier);
     const saving = dealer - midApex;
     const pct = Math.round((saving / dealer) * 100);
-
     return { range, dealer, saving: Math.round(saving), pct };
   }, [platform, currentScope]);
 
@@ -323,7 +363,51 @@ export default function Page() {
   // RENDER
   // ───────────────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen w-full bg-[#0B0C0E] text-[#F8F9FA] font-sans selection:bg-[#0062FF] selection:text-white">
+    <div className="min-h-screen w-full bg-[#0B0C0E] text-[#F8F9FA] font-sans selection:bg-[#0062FF] selection:text-white overflow-x-hidden">
+
+      {/* Embedded tactile & motion utility styles */}
+      <style>{`
+        /* Smooth button shine on hover */
+        .btn-sheen {
+          position: relative;
+          overflow: hidden;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-sheen::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -120%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.6s ease;
+          pointer-events: none;
+        }
+        .btn-sheen:hover::after {
+          left: 120%;
+        }
+
+        /* Nav link hover geometry */
+        .nav-item-link {
+          position: relative;
+        }
+        .nav-item-link::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 12px;
+          right: 12px;
+          height: 1px;
+          background-color: #0062FF;
+          transform: scaleX(0);
+          transform-origin: left;
+          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .nav-item-link:hover::after {
+          transform: scaleX(1);
+        }
+      `}</style>
 
       {/* ===================================================================
           SECTION 1 — AGENCY DEMONSTRATION NOTICE
@@ -334,7 +418,7 @@ export default function Page() {
           href="https://ithelpers.com.au"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-neutral-300 underline underline-offset-2 hover:text-white transition-colors"
+          className="text-neutral-300 underline underline-offset-2 hover:text-white transition-colors duration-200"
         >
           Visit Agency (ithelpers.com.au)
         </a>
@@ -345,18 +429,20 @@ export default function Page() {
       =================================================================== */}
       <div className="sticky top-4 z-50 px-4 sm:px-6">
         <nav
-          className={`bg-[#0B0C0E]/90 backdrop-blur border border-white/10 rounded-full px-4 sm:px-6 py-3 max-w-6xl mx-auto flex items-center justify-between transition-shadow ${
-            scrolled ? "shadow-2xl shadow-black/60" : ""
+          className={`bg-[#0B0C0E]/90 backdrop-blur border border-white/10 rounded-full px-4 sm:px-6 py-3 max-w-6xl mx-auto flex items-center justify-between transition-all duration-300 ${
+            scrolled
+              ? "shadow-2xl shadow-black/80 border-white/20 bg-[#0B0C0E]/95"
+              : "hover:border-white/20"
           }`}
           aria-label="Main navigation"
         >
-          {/* Brand */}
-          <a href="#" className="flex items-center gap-2.5 flex-shrink-0">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-70" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]" />
+          {/* Brand with continuous ambient pulse ring */}
+          <a href="#" className="flex items-center gap-2.5 flex-shrink-0 group">
+            <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#10B981]" />
             </span>
-            <span className="text-xs font-bold tracking-widest text-white uppercase">
+            <span className="text-xs font-bold tracking-widest text-white uppercase transition-colors duration-200 group-hover:text-neutral-200">
               APEX PRECISION MECHANICAL
             </span>
             <span className="hidden sm:inline text-[10px] text-neutral-500 tracking-wider">
@@ -364,34 +450,45 @@ export default function Page() {
             </span>
           </a>
 
-          {/* Desktop links */}
-          <div className="hidden lg:flex items-center gap-7 text-xs text-neutral-400">
-            <a href="#estimator" className="hover:text-white transition-colors">Services</a>
-            <a href="#estimator" className="hover:text-white transition-colors">Cost Estimator</a>
-            <a href="#standard" className="hover:text-white transition-colors">The Apex Standard</a>
-            <a href="#guarantee" className="hover:text-white transition-colors">Guarantee</a>
-            <a href="#reservation" className="hover:text-white transition-colors">Contact</a>
+          {/* Desktop nav links with slide underline & subtle pill glow */}
+          <div className="hidden lg:flex items-center gap-1 text-xs text-neutral-400">
+            {[
+              ["#estimator", "Services"],
+              ["#estimator", "Cost Estimator"],
+              ["#standard", "The Apex Standard"],
+              ["#guarantee", "Guarantee"],
+              ["#reservation", "Contact"],
+            ].map(([href, label]) => (
+              <a
+                key={label}
+                href={href}
+                className="nav-item-link py-1.5 px-3 rounded-full text-neutral-400 hover:text-white transition-colors duration-200 group"
+              >
+                <span className="relative z-10">{label}</span>
+                <span className="absolute inset-0 rounded-full bg-white/[0.04] opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none" />
+              </a>
+            ))}
           </div>
 
-          {/* Right actions */}
+          {/* Right direct line & CTA */}
           <div className="flex items-center gap-3">
             <a
               href="tel:0289013400"
-              className="hidden md:flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white transition-colors"
+              className="hidden md:flex items-center gap-1.5 text-xs text-neutral-300 hover:text-white transition-colors duration-200 py-1.5 px-2.5 rounded-full hover:bg-white/5"
             >
               <Phone className="w-3.5 h-3.5 text-[#0062FF]" />
               (02) 8901 3400
             </a>
             <a
               href="#reservation"
-              className="bg-[#0062FF] hover:bg-blue-500 text-white rounded-full px-4 py-2 text-xs font-semibold tracking-wide transition-colors"
+              className="btn-sheen bg-[#0062FF] hover:bg-blue-500 text-white rounded-full px-4 py-2 text-xs font-semibold tracking-wide transition-all duration-150 ease-out active:scale-[0.98] shadow-md shadow-[#0062FF]/20"
             >
-              Book service
+              Book Service
             </a>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-1.5 text-neutral-400 hover:text-white transition-colors"
+              className="lg:hidden p-1.5 text-neutral-400 hover:text-white transition-colors duration-200 active:scale-[0.96]"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -401,7 +498,7 @@ export default function Page() {
 
         {/* Mobile drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden mt-2 max-w-6xl mx-auto bg-[#0B0C0E]/95 backdrop-blur border border-white/10 rounded-[4px] p-4 flex flex-col gap-1">
+          <div className="lg:hidden mt-2 max-w-6xl mx-auto bg-[#0B0C0E]/95 backdrop-blur border border-white/10 rounded-[4px] p-4 flex flex-col gap-1 shadow-2xl">
             {[
               ["#estimator", "Services"],
               ["#estimator", "Cost Estimator"],
@@ -413,7 +510,7 @@ export default function Page() {
                 key={label}
                 href={href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-sm text-neutral-300 hover:text-white py-2.5 px-3 rounded-[4px] hover:bg-white/5 transition-colors"
+                className="text-sm text-neutral-300 hover:text-white py-2.5 px-3 rounded-[4px] hover:bg-white/5 transition-colors duration-200"
               >
                 {label}
               </a>
@@ -421,7 +518,7 @@ export default function Page() {
             <div className="pt-3 border-t border-white/10 mt-1">
               <a
                 href="tel:0289013400"
-                className="flex items-center gap-2 text-sm text-neutral-300 py-2 px-3"
+                className="flex items-center gap-2 text-sm text-neutral-300 py-2 px-3 hover:text-white transition-colors duration-200"
               >
                 <Phone className="w-4 h-4 text-[#0062FF]" />
                 (02) 8901 3400
@@ -434,23 +531,29 @@ export default function Page() {
       {/* ===================================================================
           SECTION 3 — ASYMMETRIC COMMERCIAL HERO
       =================================================================== */}
-      <section className="w-full pt-12 pb-20 lg:pt-16 lg:pb-28 px-4 sm:px-6 lg:px-8 border-b border-white/10">
-        <div className="max-w-6xl mx-auto">
+      <section className="w-full pt-12 pb-20 lg:pt-16 lg:pb-28 px-4 sm:px-6 lg:px-8 border-b border-white/10 relative overflow-hidden">
+        {/* Subtle ambient light accents */}
+        <div
+          aria-hidden="true"
+          className="absolute -top-24 right-1/4 w-[500px] h-[500px] bg-[#0062FF]/5 blur-3xl pointer-events-none rounded-full"
+        />
+
+        <div className="max-w-6xl mx-auto relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-[55%_45%] gap-10 lg:gap-16 items-center">
 
             {/* Left — Editorial copy */}
             <div className="flex flex-col gap-7">
               <div>
-                <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-medium text-neutral-400 tracking-wide">
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-[11px] font-medium text-neutral-400 tracking-wide hover:border-white/25 transition-colors duration-300">
                   NSW MVRL Lic #58291 · Alexandria Independent Specialist
                 </span>
               </div>
 
               <div className="flex flex-col gap-4">
                 <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-white leading-[1.08]">
-                  Dealership-level precision.
+                  Dealership-Level Precision.
                   <br />
-                  <span className="text-neutral-400 font-light">Independent workshop integrity.</span>
+                  <span className="text-neutral-400 font-light">Independent Workshop Integrity.</span>
                 </h1>
                 <p className="text-base text-neutral-400 leading-relaxed max-w-lg">
                   Certified European & Japanese mechanical facility. Preserving your statutory new car warranty under{" "}
@@ -462,17 +565,17 @@ export default function Page() {
               <div className="flex flex-wrap items-center gap-3">
                 <a
                   href="#estimator"
-                  className="inline-flex items-center gap-2 bg-[#0062FF] hover:bg-blue-500 text-white rounded-full px-6 py-3 text-sm font-semibold transition-colors"
+                  className="btn-sheen inline-flex items-center gap-2 bg-[#0062FF] hover:bg-blue-500 text-white rounded-full px-6 py-3 text-sm font-semibold transition-all duration-150 ease-out active:scale-[0.98] shadow-lg shadow-[#0062FF]/20"
                 >
-                  Instant service estimator
-                  <ArrowRight className="w-4 h-4" />
+                  Instant Service Estimator
+                  <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </a>
                 <a
                   href="tel:0289013400"
-                  className="inline-flex items-center gap-2 border border-white/20 hover:border-white/40 text-neutral-300 hover:text-white rounded-full px-6 py-3 text-sm font-medium transition-colors"
+                  className="btn-sheen inline-flex items-center gap-2 border border-white/20 hover:border-white/40 hover:bg-white/5 text-neutral-300 hover:text-white rounded-full px-6 py-3 text-sm font-medium transition-all duration-150 ease-out active:scale-[0.98]"
                 >
                   <Phone className="w-3.5 h-3.5 text-[#0062FF]" />
-                  (02) 8901 3400 — Speak to a mechanic
+                  (02) 8901 3400 — Speak to a Mechanic
                 </a>
               </div>
 
@@ -491,22 +594,29 @@ export default function Page() {
               </div>
             </div>
 
-            {/* Right — Vehicle image */}
-            <div className="relative">
-              <div className="rounded-[4px] border border-white/10 overflow-hidden bg-[#12151A]">
+            {/* Right — Vehicle visual with ambient radial blur & hover zoom/pan */}
+            <div className="relative group">
+              {/* Faint radial blue blur behind hero vehicle */}
+              <div
+                aria-hidden="true"
+                className="absolute -inset-6 bg-[#0062FF]/10 blur-3xl pointer-events-none rounded-full opacity-70 group-hover:opacity-100 transition-opacity duration-700"
+              />
+
+              <div className="relative rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 overflow-hidden bg-[#12151A] shadow-2xl">
                 <img
                   src="https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=1400&q=80"
-                  alt="European vehicle on workshop diagnostic lift at Apex Precision Mechanical"
-                  className="w-full h-[360px] sm:h-[420px] object-cover object-center opacity-90"
+                  alt="Precision European vehicle on workshop diagnostic lift at Apex Precision Mechanical"
+                  className="w-full h-[360px] sm:h-[420px] object-cover object-center opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
               </div>
-              {/* Floating trust chips */}
+
+              {/* Floating minimalist trust chips */}
               <div className="absolute top-4 left-4 flex flex-col gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/80 backdrop-blur border border-white/15 px-3 py-1.5 text-[11px] font-medium text-neutral-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/85 backdrop-blur border border-white/15 px-3 py-1.5 text-[11px] font-medium text-neutral-200 shadow-lg hover:border-white/30 transition-colors duration-200">
                   <Check className="w-3 h-3 text-[#10B981]" />
                   100% ACL Statutory Warranty Safe
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/80 backdrop-blur border border-white/15 px-3 py-1.5 text-[11px] font-medium text-neutral-200">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/85 backdrop-blur border border-white/15 px-3 py-1.5 text-[11px] font-medium text-neutral-200 shadow-lg hover:border-white/30 transition-colors duration-200">
                   <Check className="w-3 h-3 text-[#0062FF]" />
                   Factory Diagnostic Parity
                 </span>
@@ -525,26 +635,29 @@ export default function Page() {
             {[
               {
                 n: "01",
-                title: "Statutory warranty safe",
-                body: "100% manufacturer warranty protected by Australian Consumer Law — we service your new car for less, legally.",
+                title: "Statutory Warranty Safe",
+                body: "100% manufacturer warranty protected by Australian law. We service your new car without dealer monopoly premiums.",
               },
               {
                 n: "02",
-                title: "OEM components only",
-                body: "Mahle, Mann, Brembo, Bilstein genuine tier-1 components. No pattern parts, no compromises.",
+                title: "OEM Components Only",
+                body: "Mahle, Mann, Brembo, Bilstein genuine tier-1 components. Zero generic counterfeit parts or cut corners.",
               },
               {
                 n: "03",
-                title: "Digital video quoting",
-                body: "HD video inspection sent to your phone before any work begins. You approve every dollar spent.",
+                title: "Digital Video Quoting",
+                body: "HD video inspection sent to your phone before any work begins. Inspect the worn part yourself before approving costs.",
               },
               {
                 n: "04",
-                title: "Licensed master mechanics",
-                body: "Dedicated senior technicians handling every engine bay. No unsupervised apprentices on your vehicle.",
+                title: "Licensed Master Mechanics",
+                body: "Dedicated senior technicians handling engine bays. No unsupervised first-year apprentices on your vehicle.",
               },
             ].map(({ n, title, body }) => (
-              <div key={n} className="py-8 px-6 first:pl-0 last:pr-0 sm:first:pl-6 sm:last:pr-6 lg:first:pl-0 lg:last:pr-0 flex flex-col gap-3">
+              <div
+                key={n}
+                className="py-8 px-6 first:pl-0 last:pr-0 sm:first:pl-6 sm:last:pr-6 lg:first:pl-0 lg:last:pr-0 flex flex-col gap-3 rounded-[4px] hover:bg-white/[0.015] transition-colors duration-300"
+              >
                 <span className="text-[10px] font-mono text-neutral-600 tracking-widest">Pillar {n}</span>
                 <h3 className="text-sm font-semibold text-white leading-snug">{title}</h3>
                 <p className="text-xs text-neutral-500 leading-relaxed">{body}</p>
@@ -559,17 +672,22 @@ export default function Page() {
       =================================================================== */}
       <section
         id="estimator"
-        ref={estimatorRef as React.RefObject<HTMLElement>}
-        className="w-full py-20 lg:py-28 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-[#12151A]"
+        className="w-full py-20 lg:py-28 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-[#12151A] relative overflow-hidden"
       >
-        <div className="max-w-6xl mx-auto flex flex-col gap-12">
+        {/* Subtle radial ambient blue blur behind cost estimator */}
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 -right-24 -translate-y-1/2 w-96 h-96 bg-[#0062FF]/10 blur-3xl pointer-events-none rounded-full"
+        />
+
+        <div className="max-w-6xl mx-auto flex flex-col gap-12 relative z-10">
           {/* Header */}
           <div className="flex flex-col gap-3 max-w-2xl">
             <span className="text-[11px] font-mono text-neutral-500 tracking-widest uppercase">
-              Transparent pricing
+              Transparent Pricing Estimator
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-              Service cost & transparency engine
+              Service Cost & Transparency Engine
             </h2>
             <p className="text-sm text-neutral-400 leading-relaxed">
               Real pricing based on factory standard times and direct OEM component procurement.
@@ -577,7 +695,7 @@ export default function Page() {
             </p>
           </div>
 
-          {/* Brand selector pills */}
+          {/* Brand selector pills with smooth active high-contrast states */}
           <div className="flex flex-wrap gap-2">
             {(
               [
@@ -591,10 +709,10 @@ export default function Page() {
                 key={id}
                 type="button"
                 onClick={() => setPlatform(id)}
-                className={`rounded-full px-4 py-2 text-xs font-medium transition-all ${
+                className={`rounded-full px-4 py-2 text-xs font-medium transition-all duration-300 active:scale-[0.98] ${
                   platform === id
-                    ? "bg-[#0062FF] text-white"
-                    : "border border-white/15 text-neutral-400 hover:border-white/30 hover:text-white"
+                    ? "bg-[#0062FF] text-white shadow-lg shadow-[#0062FF]/20 ring-1 ring-white/20"
+                    : "border border-white/10 text-neutral-400 hover:border-white/25 hover:text-white hover:bg-white/5"
                 }`}
               >
                 {label}
@@ -605,7 +723,7 @@ export default function Page() {
           {/* Estimator workspace */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 items-start">
 
-            {/* Scope selection */}
+            {/* Scope selection buttons */}
             <div className="flex flex-col gap-3">
               <p className="text-xs text-neutral-500 mb-1">Select service scope</p>
               {SERVICE_SCOPES.map((scope) => {
@@ -621,19 +739,19 @@ export default function Page() {
                     key={scope.id}
                     type="button"
                     onClick={() => setSelectedScopeId(scope.id)}
-                    className={`text-left rounded-[4px] p-4 border transition-all ${
+                    className={`group text-left rounded-[4px] p-4 border transition-all duration-200 active:scale-[0.99] ${
                       isSelected
-                        ? "border-[#0062FF] bg-[#0062FF]/5 ring-1 ring-[#0062FF]/20"
-                        : "border-white/10 bg-[#0B0C0E] hover:border-white/20"
+                        ? "border-[#0062FF] bg-[#0062FF]/8 shadow-lg shadow-[#0062FF]/10 ring-1 ring-[#0062FF]/30"
+                        : "border-white/10 bg-[#0B0C0E] hover:border-white/25 hover:bg-white/[0.02]"
                     }`}
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-start gap-3">
                         <div
-                          className={`mt-0.5 w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center ${
+                          className={`mt-0.5 w-4 h-4 rounded-full border flex-shrink-0 flex items-center justify-center transition-all duration-200 ${
                             isSelected
                               ? "border-[#0062FF] bg-[#0062FF]"
-                              : "border-white/20"
+                              : "border-white/20 group-hover:border-white/40"
                           }`}
                         >
                           {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
@@ -649,7 +767,8 @@ export default function Page() {
                       </div>
                       <div className="text-right flex-shrink-0">
                         <div className="text-sm font-bold text-white font-mono">
-                          ${range[0]}–${range[1]}
+                          <AnimatedNumber value={range[0]} prefix="$" />–
+                          <AnimatedNumber value={range[1]} prefix="$" />
                         </div>
                         <div className="text-[11px] text-neutral-500">
                           {scope.turnaround.split("·")[0].trim()}
@@ -661,16 +780,17 @@ export default function Page() {
               })}
             </div>
 
-            {/* Financial breakdown panel */}
-            <div className="rounded-[4px] border border-white/10 bg-[#0B0C0E] p-6 flex flex-col gap-6 sticky top-24">
+            {/* Financial breakdown panel with live ticking counters */}
+            <div className="rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 bg-[#0B0C0E] p-6 flex flex-col gap-6 sticky top-24 shadow-xl">
               {/* Apex investment */}
               <div className="flex flex-col gap-1 pb-5 border-b border-white/10">
                 <span className="text-[11px] text-neutral-500 uppercase tracking-wider">
-                  Apex workshop investment
+                  Apex Workshop Investment
                 </span>
                 <div className="flex items-baseline gap-2 mt-1">
-                  <span className="text-4xl font-bold text-white font-mono tracking-tight">
-                    ${pricing.range[0]}–${pricing.range[1]}
+                  <span className="text-4xl font-bold text-white font-mono tracking-tight transition-all duration-300">
+                    <AnimatedNumber value={pricing.range[0]} prefix="$" />–
+                    <AnimatedNumber value={pricing.range[1]} prefix="$" />
                   </span>
                   <span className="text-xs text-neutral-500">inc. GST</span>
                 </div>
@@ -679,32 +799,34 @@ export default function Page() {
                 </span>
               </div>
 
-              {/* Savings grid */}
+              {/* Savings benchmark grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-[4px] border border-white/10 bg-[#12151A] p-3">
+                <div className="rounded-[4px] border border-white/10 bg-[#12151A] p-3 hover:border-white/20 transition-colors duration-200">
                   <div className="text-[10px] text-neutral-500 uppercase mb-1">
-                    Average franchise dealer
+                    Franchise Dealer Benchmark
                   </div>
                   <div className="text-lg font-bold text-neutral-400 line-through font-mono">
-                    ${pricing.dealer}
+                    <AnimatedNumber value={pricing.dealer} prefix="$" />
                   </div>
                   <div className="text-[10px] text-neutral-500 mt-0.5">Dealer benchmark</div>
                 </div>
-                <div className="rounded-[4px] border border-[#10B981]/25 bg-[#10B981]/5 p-3">
+                <div className="rounded-[4px] border border-[#10B981]/25 bg-[#10B981]/5 p-3 hover:border-[#10B981]/40 transition-colors duration-200">
                   <div className="text-[10px] text-[#10B981] uppercase mb-1">
-                    Direct customer savings
+                    Direct Customer Savings
                   </div>
                   <div className="text-lg font-bold text-[#10B981] font-mono">
-                    −${pricing.saving}
+                    −<AnimatedNumber value={pricing.saving} prefix="$" />
                   </div>
-                  <div className="text-[10px] text-[#10B981]/70 mt-0.5">{pricing.pct}% below dealer</div>
+                  <div className="text-[10px] text-[#10B981]/70 mt-0.5">
+                    <AnimatedNumber value={pricing.pct} suffix="%" /> below dealer
+                  </div>
                 </div>
               </div>
 
-              {/* Inclusions */}
+              {/* Dynamic inclusions checklist */}
               <div className="flex flex-col gap-3">
                 <span className="text-[11px] text-neutral-500 uppercase tracking-wider">
-                  What's included
+                  What&apos;s Included
                 </span>
                 <ul className="flex flex-col gap-2">
                   {currentScope.inclusions.map((item, i) => (
@@ -716,17 +838,17 @@ export default function Page() {
                 </ul>
               </div>
 
-              {/* CTA */}
+              {/* Action trigger with tactile press & sheen */}
               <button
                 type="button"
                 onClick={handleLockInEstimate}
-                className="w-full bg-[#0062FF] hover:bg-blue-500 text-white rounded-[4px] py-3.5 px-5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                className="btn-sheen w-full bg-[#0062FF] hover:bg-blue-500 text-white rounded-[4px] py-3.5 px-5 text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-150 ease-out active:scale-[0.98] shadow-md shadow-[#0062FF]/20"
               >
-                Lock in this estimate & book bay
+                Lock In This Estimate & Book Bay
                 <ArrowRight className="w-4 h-4" />
               </button>
               <p className="text-[11px] text-center text-neutral-600 -mt-3">
-                Pre-fills reservation below · No deposit required
+                Pre-fills reservation terminal below · No deposit required upfront
               </p>
             </div>
           </div>
@@ -742,10 +864,10 @@ export default function Page() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 items-start">
             <div className="flex flex-col gap-3">
               <span className="text-[11px] font-mono text-neutral-500 tracking-widest uppercase">
-                Mechanical disciplines
+                Core Mechanical Disciplines
               </span>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-                Six domains. One standard.
+                Six Domains. One Standard.
               </h2>
               <p className="text-sm text-neutral-400 leading-relaxed max-w-lg">
                 Engineered service protocols exceeding factory dealer criteria. Every vehicle receives
@@ -753,25 +875,25 @@ export default function Page() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-[4px] border border-white/10 overflow-hidden h-36">
+              <div className="group rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 overflow-hidden h-36">
                 <img
                   src="https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80"
-                  alt="Apex Precision Mechanical workshop bay"
-                  className="w-full h-full object-cover opacity-80"
+                  alt="Apex Precision Mechanical Alexandria workshop bay"
+                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
               </div>
-              <div className="rounded-[4px] border border-white/10 overflow-hidden h-36">
+              <div className="group rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 overflow-hidden h-36">
                 <img
                   src="https://images.unsplash.com/photo-1625047509168-a7026f36de04?auto=format&fit=crop&w=800&q=80"
                   alt="Apex Precision Mechanical engine service"
-                  className="w-full h-full object-cover opacity-80"
+                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
               </div>
             </div>
           </div>
 
-          {/* Accordion disciplines list */}
-          <div className="border border-white/10 rounded-[4px] overflow-hidden divide-y divide-white/10">
+          {/* Accordion disciplines list with smooth expand/collapse & 180deg icon rotation */}
+          <div className="border border-white/10 rounded-[4px] overflow-hidden divide-y divide-white/10 shadow-lg">
             {DISCIPLINES.map((d) => {
               const isOpen = expandedDiscipline === d.index;
               return (
@@ -779,7 +901,9 @@ export default function Page() {
                   <button
                     type="button"
                     onClick={() => setExpandedDiscipline(isOpen ? "" : d.index)}
-                    className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-white/[0.02] transition-colors"
+                    className={`w-full px-5 py-4 flex items-center justify-between gap-4 text-left transition-colors duration-300 ${
+                      isOpen ? "bg-white/[0.03]" : "hover:bg-white/[0.015]"
+                    }`}
                   >
                     <div className="flex items-center gap-5">
                       <span className="font-mono text-xs text-neutral-600 w-6 flex-shrink-0">
@@ -796,43 +920,53 @@ export default function Page() {
                       <span className="hidden md:block text-xs text-neutral-500 font-mono">
                         {d.window}
                       </span>
-                      {isOpen ? (
-                        <ChevronUp className="w-4 h-4 text-neutral-500 flex-shrink-0" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4 text-neutral-500 flex-shrink-0" />
-                      )}
+                      {/* Icon with smooth rotate-180 transition */}
+                      <ChevronDown
+                        className={`w-4 h-4 flex-shrink-0 transition-transform duration-300 ${
+                          isOpen ? "rotate-180 text-[#0062FF]" : "text-neutral-500"
+                        }`}
+                      />
                     </div>
                   </button>
 
-                  {isOpen && (
-                    <div className="px-5 pb-6 pt-1 bg-[#12151A] border-t border-white/10">
-                      <div className="flex flex-col gap-5 ml-11">
-                        <p className="text-sm text-neutral-400 leading-relaxed max-w-2xl">
-                          {d.description}
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          {d.points.map((pt, i) => (
-                            <div key={i} className="flex items-start gap-2 text-xs text-neutral-400">
-                              <Check className="w-3.5 h-3.5 text-[#10B981] mt-0.5 flex-shrink-0" />
-                              <span>{pt}</span>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="flex items-center gap-3 pt-2 border-t border-white/10">
-                          <span className="text-[11px] text-neutral-500 font-mono">
-                            Tooling: {d.tooling}
-                          </span>
-                          <a
-                            href="#reservation"
-                            className="ml-auto inline-flex items-center gap-1.5 bg-[#0062FF] hover:bg-blue-500 text-white rounded-[4px] px-3.5 py-2 text-xs font-semibold transition-colors"
-                          >
-                            Book this service
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </a>
+                  {/* Smooth grid-template-rows expansion */}
+                  <div
+                    className="grid transition-all duration-300 ease-out overflow-hidden"
+                    style={{
+                      gridTemplateRows: isOpen ? "1fr" : "0fr",
+                      opacity: isOpen ? 1 : 0,
+                    }}
+                  >
+                    <div className="overflow-hidden">
+                      <div className="px-5 pb-6 pt-1 bg-[#12151A] border-t border-white/10">
+                        <div className="flex flex-col gap-5 ml-11">
+                          <p className="text-sm text-neutral-400 leading-relaxed max-w-2xl">
+                            {d.description}
+                          </p>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            {d.points.map((pt, i) => (
+                              <div key={i} className="flex items-start gap-2 text-xs text-neutral-400">
+                                <Check className="w-3.5 h-3.5 text-[#10B981] mt-0.5 flex-shrink-0" />
+                                <span>{pt}</span>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                            <span className="text-[11px] text-neutral-500 font-mono">
+                              Tooling: {d.tooling}
+                            </span>
+                            <a
+                              href="#reservation"
+                              className="btn-sheen ml-auto inline-flex items-center gap-1.5 bg-[#0062FF] hover:bg-blue-500 text-white rounded-[4px] px-3.5 py-2 text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.98]"
+                            >
+                              Book Bay For This Service
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}
@@ -847,46 +981,49 @@ export default function Page() {
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-12 lg:gap-16 items-start">
 
-            {/* Left — portrait */}
+            {/* Left — master mechanic portrait with zoom/pan */}
             <div className="flex flex-col gap-4">
-              <div className="rounded-[4px] border border-white/10 overflow-hidden">
+              <div className="group rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 overflow-hidden shadow-2xl">
                 <img
                   src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=1000&q=80"
                   alt="Master European diagnostic specialist at Apex Precision Mechanical Alexandria"
-                  className="w-full h-[480px] object-cover object-top opacity-90"
+                  className="w-full h-[480px] object-cover object-top opacity-90 group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
               </div>
               <div className="flex items-center gap-2 px-1">
-                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]" />
+                </span>
                 <span className="text-[11px] text-neutral-500">Licensed master specialists · IAME certified</span>
               </div>
             </div>
 
-            {/* Right — editorial copy */}
+            {/* Right — editorial standards */}
             <div className="flex flex-col gap-8">
               <div className="flex flex-col gap-3">
                 <span className="text-[11px] font-mono text-neutral-500 tracking-widest uppercase">
-                  Workshop philosophy
+                  Workshop Philosophy
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-                  Built by mechanics,<br className="hidden sm:block" /> not service advisors.
+                  Built by Mechanics,<br className="hidden sm:block" /> Not Service Advisors.
                 </h2>
                 <p className="text-sm text-neutral-400 leading-relaxed">
                   We built Apex to eliminate the deceptive practices that plague franchised car dealerships.
-                  Three non-negotiable standards govern every bay in our Alexandria workshop.
+                  Three non-negotiable operational standards govern every bay in our Alexandria workshop.
                 </p>
               </div>
 
               <div className="flex flex-col gap-5">
                 {/* 01 */}
-                <div className="flex gap-5 pb-5 border-b border-white/10">
-                  <div className="w-8 h-8 rounded-[4px] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="group flex gap-5 pb-5 border-b border-white/10">
+                  <div className="w-8 h-8 rounded-[4px] border border-white/10 group-hover:border-[#0062FF]/40 group-hover:bg-[#0062FF]/10 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-300">
                     <Video className="w-4 h-4 text-[#0062FF]" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-neutral-600 tracking-widest">01</span>
-                      <h3 className="text-sm font-semibold text-white">Direct SMS video quotations</h3>
+                      <h3 className="text-sm font-semibold text-white">Direct SMS Video Quotations</h3>
                     </div>
                     <p className="text-xs text-neutral-400 leading-relaxed">
                       Inspect the worn part on video before approving costs. Our technicians record the exact
@@ -897,32 +1034,32 @@ export default function Page() {
                 </div>
 
                 {/* 02 */}
-                <div className="flex gap-5 pb-5 border-b border-white/10">
-                  <div className="w-8 h-8 rounded-[4px] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="group flex gap-5 pb-5 border-b border-white/10">
+                  <div className="w-8 h-8 rounded-[4px] border border-white/10 group-hover:border-[#0062FF]/40 group-hover:bg-[#0062FF]/10 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-300">
                     <FileText className="w-4 h-4 text-[#0062FF]" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-neutral-600 tracking-widest">02</span>
-                      <h3 className="text-sm font-semibold text-white">Zero mark-up mystery</h3>
+                      <h3 className="text-sm font-semibold text-white">Zero Mark-Up Mystery</h3>
                     </div>
                     <p className="text-xs text-neutral-400 leading-relaxed">
                       Fixed-price labor rates with itemized parts invoices. Every component we supply is
                       listed by part number, OEM supplier, and price. No bundled service packages that mask
-                      inflated margins. You see exactly what you're paying for.
+                      inflated margins. You see exactly what you&apos;re paying for.
                     </p>
                   </div>
                 </div>
 
                 {/* 03 */}
-                <div className="flex gap-5">
-                  <div className="w-8 h-8 rounded-[4px] border border-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="group flex gap-5">
+                  <div className="w-8 h-8 rounded-[4px] border border-white/10 group-hover:border-[#0062FF]/40 group-hover:bg-[#0062FF]/10 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors duration-300">
                     <Shield className="w-4 h-4 text-[#0062FF]" />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-mono text-neutral-600 tracking-widest">03</span>
-                      <h3 className="text-sm font-semibold text-white">Direct digital service book stamping</h3>
+                      <h3 className="text-sm font-semibold text-white">Direct Digital Service Book Stamping</h3>
                     </div>
                     <p className="text-xs text-neutral-400 leading-relaxed">
                       Directly logged to Audi GeKo, BMW KaSIO, and Mercedes DSB. We maintain authenticated
@@ -940,18 +1077,24 @@ export default function Page() {
       {/* ===================================================================
           SECTION 7b — ACL STATUTORY GUARANTEE (id="guarantee")
       =================================================================== */}
-      <section id="guarantee" className="w-full py-14 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-[#0B0C0E]">
-        <div className="max-w-6xl mx-auto">
-          <div className="rounded-[4px] border border-white/10 bg-[#12151A] p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-center">
+      <section id="guarantee" className="w-full py-14 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-[#0B0C0E] relative overflow-hidden">
+        {/* Subtle green ambient accent */}
+        <div
+          aria-hidden="true"
+          className="absolute top-1/2 -left-20 -translate-y-1/2 w-80 h-80 bg-[#10B981]/5 blur-3xl pointer-events-none rounded-full"
+        />
+
+        <div className="max-w-6xl mx-auto relative z-10">
+          <div className="rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 bg-[#12151A] p-8 lg:p-10 grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-center shadow-xl">
             <div className="flex flex-col gap-3 max-w-2xl">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-[#10B981]" />
                 <span className="text-xs font-semibold text-[#10B981] tracking-wide uppercase">
-                  ACL Section 54 statutory guarantee
+                  ACL Section 54 Statutory Guarantee
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white leading-tight">
-                Your new car warranty is protected by law.
+                Your New Car Warranty Is Protected by Law.
               </h2>
               <p className="text-sm text-neutral-400 leading-relaxed">
                 Under the <strong className="text-neutral-200">Competition and Consumer Act 2010</strong> (Schedule 2 —
@@ -995,10 +1138,10 @@ export default function Page() {
           {/* Header */}
           <div className="text-center flex flex-col gap-3">
             <span className="text-[11px] font-mono text-neutral-500 tracking-widest uppercase">
-              Workshop intake
+              Workshop Intake Terminal
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-              Reserve your service bay
+              Reserve Your Service Bay
             </h2>
             <p className="text-sm text-neutral-400 leading-relaxed max-w-xl mx-auto">
               Lock in your diagnostic or mechanical bay. Pre-fill your registration and service scope
@@ -1006,11 +1149,11 @@ export default function Page() {
             </p>
           </div>
 
-          {/* Form card */}
-          <div className="rounded-[4px] border border-white/10 bg-[#0B0C0E] p-6 sm:p-8">
+          {/* Form container */}
+          <div className="rounded-[4px] border border-white/10 hover:border-white/25 transition-colors duration-300 bg-[#0B0C0E] p-6 sm:p-8 shadow-2xl">
             {confirmation ? (
-              /* ── Confirmation state ── */
-              <div className="flex flex-col gap-6">
+              /* Confirmation Voucher */
+              <div className="flex flex-col gap-6 animate-in fade-in duration-300">
                 <div className="rounded-[4px] border border-[#10B981]/30 bg-[#10B981]/5 p-5 flex flex-col gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-[#10B981]/20 flex items-center justify-center">
@@ -1018,9 +1161,9 @@ export default function Page() {
                     </div>
                     <div>
                       <div className="text-xs text-[#10B981] font-semibold uppercase tracking-wide">
-                        Reservation confirmed
+                        Reservation Confirmed
                       </div>
-                      <div className="text-xl font-bold text-white font-mono">
+                      <div className="text-xl font-bold text-white font-mono tracking-wider">
                         {confirmation.reference}
                       </div>
                     </div>
@@ -1033,7 +1176,7 @@ export default function Page() {
                       ["Vehicle", confirmation.vehicle],
                       ["Service", confirmation.service],
                       ["Preferred date", confirmation.date],
-                      ["Loan car", confirmation.loanCar ? "Requested — subject to availability" : "Not required"],
+                      ["Loan car", confirmation.loanCar ? "Requested — European Fleet Allocated" : "Not Required"],
                     ].map(([label, value]) => (
                       <div key={label} className="flex flex-col gap-0.5">
                         <span className="text-[10px] text-neutral-500 uppercase tracking-wider">{label}</span>
@@ -1055,27 +1198,27 @@ export default function Page() {
                   <button
                     type="button"
                     onClick={() => setConfirmation(null)}
-                    className="inline-flex items-center gap-2 border border-white/15 hover:border-white/30 text-neutral-300 hover:text-white rounded-[4px] px-4 py-2.5 text-xs font-medium transition-colors"
+                    className="btn-sheen inline-flex items-center gap-2 border border-white/15 hover:border-white/30 hover:bg-white/5 text-neutral-300 hover:text-white rounded-[4px] px-4 py-2.5 text-xs font-medium transition-all duration-150 ease-out active:scale-[0.98]"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    New reservation
+                    New Reservation
                   </button>
                   <a
                     href="tel:0289013400"
-                    className="inline-flex items-center gap-2 bg-[#0062FF] hover:bg-blue-500 text-white rounded-[4px] px-4 py-2.5 text-xs font-semibold transition-colors"
+                    className="btn-sheen inline-flex items-center gap-2 bg-[#0062FF] hover:bg-blue-500 text-white rounded-[4px] px-4 py-2.5 text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.98]"
                   >
                     <Phone className="w-3.5 h-3.5" />
-                    Call workshop
+                    Call Workshop Dispatch
                   </a>
                 </div>
               </div>
             ) : (
-              /* ── Form state ── */
+              /* Intake Form */
               <form onSubmit={handleBookingSubmit} className="flex flex-col gap-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-neutral-400 font-medium">
-                      Full name <span className="text-[#0062FF]">*</span>
+                      Full Name <span className="text-[#0062FF]">*</span>
                     </label>
                     <input
                       type="text"
@@ -1083,12 +1226,12 @@ export default function Page() {
                       placeholder="e.g. James Hartmann"
                       value={bookName}
                       onChange={(e) => setBookName(e.target.value)}
-                      className="rounded-[4px] bg-[#12151A] border border-white/10 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600"
+                      className="rounded-[4px] bg-[#12151A] border border-white/10 hover:border-white/20 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600 transition-colors duration-200"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-neutral-400 font-medium">
-                      Mobile number <span className="text-[#0062FF]">*</span>
+                      Mobile Number <span className="text-[#0062FF]">*</span>
                     </label>
                     <input
                       type="tel"
@@ -1096,7 +1239,7 @@ export default function Page() {
                       placeholder="e.g. 0412 345 678"
                       value={bookPhone}
                       onChange={(e) => setBookPhone(e.target.value)}
-                      className="rounded-[4px] bg-[#12151A] border border-white/10 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600"
+                      className="rounded-[4px] bg-[#12151A] border border-white/10 hover:border-white/20 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600 transition-colors duration-200"
                     />
                   </div>
                 </div>
@@ -1104,7 +1247,7 @@ export default function Page() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs text-neutral-400 font-medium">
-                      Rego / make & model <span className="text-[#0062FF]">*</span>
+                      Rego / Make & Model <span className="text-[#0062FF]">*</span>
                     </label>
                     <input
                       type="text"
@@ -1112,15 +1255,15 @@ export default function Page() {
                       placeholder="e.g. NSW BZF82E · 2023 Audi S4"
                       value={bookRego}
                       onChange={(e) => setBookRego(e.target.value)}
-                      className="rounded-[4px] bg-[#12151A] border border-white/10 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600"
+                      className="rounded-[4px] bg-[#12151A] border border-white/10 hover:border-white/20 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600 transition-colors duration-200"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-neutral-400 font-medium">Service scope</label>
+                    <label className="text-xs text-neutral-400 font-medium">Service Scope</label>
                     <select
                       value={bookService}
                       onChange={(e) => setBookService(e.target.value)}
-                      className="rounded-[4px] bg-[#12151A] border border-white/10 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm"
+                      className="rounded-[4px] bg-[#12151A] border border-white/10 hover:border-white/20 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm transition-colors duration-200"
                     >
                       {SERVICE_SCOPES.map((s) => (
                         <option key={s.id} value={s.name}>
@@ -1133,25 +1276,25 @@ export default function Page() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-neutral-400 font-medium">Preferred drop-off date</label>
+                    <label className="text-xs text-neutral-400 font-medium">Preferred Drop-Off Date</label>
                     <input
                       type="date"
                       value={bookDate}
                       onChange={(e) => setBookDate(e.target.value)}
-                      className="rounded-[4px] bg-[#12151A] border border-white/10 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm"
+                      className="rounded-[4px] bg-[#12151A] border border-white/10 hover:border-white/20 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm transition-colors duration-200"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-xs text-neutral-400 font-medium">Loan car required?</label>
+                    <label className="text-xs text-neutral-400 font-medium">Loan Car Required?</label>
                     <div className="flex gap-2 h-full items-end pb-0.5">
                       {["Yes", "No"].map((opt) => (
                         <button
                           key={opt}
                           type="button"
                           onClick={() => setBookLoanCar(opt === "Yes")}
-                          className={`flex-1 rounded-[4px] border py-2.5 text-xs font-medium transition-colors ${
+                          className={`flex-1 rounded-[4px] border py-2.5 text-xs font-medium transition-all duration-200 active:scale-[0.98] ${
                             (opt === "Yes" && bookLoanCar) || (opt === "No" && !bookLoanCar)
-                              ? "border-[#0062FF] bg-[#0062FF]/10 text-white"
+                              ? "border-[#0062FF] bg-[#0062FF]/10 text-white ring-1 ring-[#0062FF]/30"
                               : "border-white/10 text-neutral-500 hover:border-white/20 hover:text-neutral-300"
                           }`}
                         >
@@ -1164,14 +1307,14 @@ export default function Page() {
 
                 <div className="flex flex-col gap-1.5">
                   <label className="text-xs text-neutral-400 font-medium">
-                    Notes / fault symptoms
+                    Technical Notes / Specific Fault Symptoms
                   </label>
                   <textarea
                     rows={3}
                     placeholder="Describe any warning lights, noises, vibration patterns, or past maintenance history..."
                     value={bookNotes}
                     onChange={(e) => setBookNotes(e.target.value)}
-                    className="rounded-[4px] bg-[#12151A] border border-white/10 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600 resize-none"
+                    className="rounded-[4px] bg-[#12151A] border border-white/10 hover:border-white/20 text-white focus:border-[#0062FF] focus:outline-none focus:ring-1 focus:ring-[#0062FF]/20 px-3.5 py-2.5 text-sm placeholder:text-neutral-600 resize-none transition-colors duration-200"
                   />
                 </div>
 
@@ -1179,22 +1322,22 @@ export default function Page() {
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-[#0062FF] hover:bg-blue-500 disabled:bg-neutral-700 text-white rounded-[4px] py-3.5 px-6 text-sm font-semibold flex items-center justify-center gap-2 transition-colors"
+                    className="btn-sheen w-full bg-[#0062FF] hover:bg-blue-500 disabled:bg-neutral-700 text-white rounded-[4px] py-3.5 px-6 text-sm font-semibold flex items-center justify-center gap-2 transition-all duration-150 ease-out active:scale-[0.98] shadow-lg shadow-[#0062FF]/20"
                   >
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
                         <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        Confirming reservation…
+                        Confirming Reservation…
                       </span>
                     ) : (
                       <>
-                        Confirm bay reservation
+                        Confirm Bay Reservation
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
                   <p className="text-center text-[11px] text-neutral-600 mt-2">
-                    Instant confirmation issued · No payment required upfront
+                    Instant confirmation voucher issued · Zero card details required upfront
                   </p>
                 </div>
               </form>
@@ -1216,7 +1359,7 @@ export default function Page() {
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-[#0062FF]" />
                 <span className="text-xs font-semibold text-white uppercase tracking-wide">
-                  Alexandria workshop
+                  Alexandria Workshop
                 </span>
               </div>
               <p className="text-sm text-neutral-300 font-medium">
@@ -1227,11 +1370,17 @@ export default function Page() {
                 Station with rapid transit to Sydney CBD.
               </p>
               <div className="flex flex-col gap-1.5 pt-1">
-                <a href="tel:0289013400" className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors">
+                <a
+                  href="tel:0289013400"
+                  className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors duration-200"
+                >
                   <Phone className="w-3.5 h-3.5 text-[#0062FF]" />
                   (02) 8901 3400
                 </a>
-                <a href="mailto:dispatch@apexprecision.com.au" className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors">
+                <a
+                  href="mailto:dispatch@apexprecision.com.au"
+                  className="flex items-center gap-2 text-xs text-neutral-400 hover:text-white transition-colors duration-200"
+                >
                   <Mail className="w-3.5 h-3.5 text-[#0062FF]" />
                   dispatch@apexprecision.com.au
                 </a>
@@ -1243,7 +1392,7 @@ export default function Page() {
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-[#0062FF]" />
                 <span className="text-xs font-semibold text-white uppercase tracking-wide">
-                  Operating hours
+                  Operating Hours
                 </span>
               </div>
               <div className="flex flex-col gap-2">
@@ -1261,7 +1410,7 @@ export default function Page() {
               <div className="flex items-start gap-2 pt-1">
                 <Key className="w-3.5 h-3.5 text-[#10B981] mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-neutral-500 leading-relaxed">
-                  <strong className="text-neutral-300">24/7 secure after-hours key drop box</strong> available at Bay 01 for early
+                  <strong className="text-neutral-300">24/7 Secure After-Hours Key Drop Box:</strong> Available at Bay 01 for early
                   morning or late-night drop-offs. Instructions provided upon reservation.
                 </p>
               </div>
@@ -1269,19 +1418,19 @@ export default function Page() {
 
             {/* Quick links */}
             <div className="flex flex-col gap-3">
-              <span className="text-xs font-semibold text-white uppercase tracking-wide">Quick access</span>
+              <span className="text-xs font-semibold text-white uppercase tracking-wide">Quick Access</span>
               <div className="flex flex-col gap-1">
                 {[
-                  ["#estimator", "Service cost estimator"],
-                  ["#estimator", "Core disciplines"],
-                  ["#standard", "The Apex standard"],
-                  ["#guarantee", "ACL warranty guarantee"],
-                  ["#reservation", "Book a service bay"],
+                  ["#estimator", "Service Cost Estimator"],
+                  ["#estimator", "Core Mechanical Disciplines"],
+                  ["#standard", "The Apex Standard"],
+                  ["#guarantee", "ACL Statutory Warranty Guarantee"],
+                  ["#reservation", "Reserve a Service Bay"],
                 ].map(([href, label]) => (
                   <a
                     key={label}
                     href={href}
-                    className="text-xs text-neutral-500 hover:text-neutral-200 transition-colors py-1"
+                    className="text-xs text-neutral-500 hover:text-neutral-200 transition-colors duration-200 py-1"
                   >
                     {label}
                   </a>
@@ -1312,20 +1461,20 @@ export default function Page() {
       {/* ===================================================================
           MOBILE STICKY BOTTOM ACTION BAR (< 768px)
       =================================================================== */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0B0C0E]/95 backdrop-blur border-t border-white/10 p-3 flex items-center gap-3">
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-[#0B0C0E]/95 backdrop-blur border-t border-white/10 p-3 flex items-center gap-3 shadow-2xl">
         <a
           href="tel:0289013400"
-          className="flex-1 flex items-center justify-center gap-2 border border-white/15 hover:border-white/30 text-neutral-200 rounded-full py-3 text-xs font-semibold transition-colors"
+          className="btn-sheen flex-1 flex items-center justify-center gap-2 border border-white/15 hover:border-white/30 text-neutral-200 rounded-full py-3 text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.98]"
         >
           <Phone className="w-4 h-4 text-[#0062FF]" />
           Call (02) 8901 3400
         </a>
         <a
           href="#reservation"
-          className="flex-1 flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-blue-500 text-white rounded-full py-3 text-xs font-semibold transition-colors"
+          className="btn-sheen flex-1 flex items-center justify-center gap-2 bg-[#0062FF] hover:bg-blue-500 text-white rounded-full py-3 text-xs font-semibold transition-all duration-150 ease-out active:scale-[0.98]"
         >
           <Calendar className="w-4 h-4" />
-          Book online
+          Book Online
         </a>
       </div>
     </div>
