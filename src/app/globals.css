@@ -25,13 +25,13 @@
 /* Layout Guard: Do NOT apply overflow-x: hidden to html or body to keep position: sticky active */
 html {
   scroll-behavior: smooth;
-  background-color: #FFFFFF;
-  color: #000000;
+  background-color: #000000;
+  color: #F6F6F6;
 }
 
 body {
-  background-color: #FFFFFF;
-  color: #000000;
+  background-color: #000000;
+  color: #F6F6F6;
   min-height: 100vh;
   margin: 0;
   padding: 0;
@@ -41,6 +41,6 @@ body {
 }
 
 ::selection {
-  background-color: #4A3AFF;
+  background-color: #0057CB;
   color: #FFFFFF;
 }
